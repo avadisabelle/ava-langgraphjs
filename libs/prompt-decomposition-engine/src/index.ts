@@ -51,6 +51,8 @@ export {
   northNode,
   DecompositionGraphOptions,
   DecompositionGraph,
+  StateGraphFactoryOptions,
+  createDecompositionStateGraph,
 } from "./graphs/index.js";
 
 // =============================================================================

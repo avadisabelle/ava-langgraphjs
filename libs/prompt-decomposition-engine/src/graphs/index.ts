@@ -8,3 +8,8 @@ export {
   DecompositionGraphOptions,
   DecompositionGraph,
 } from "./decomposition_graph.js";
+
+export {
+  StateGraphFactoryOptions,
+  createDecompositionStateGraph,
+} from "./state_graph_factory.js";
