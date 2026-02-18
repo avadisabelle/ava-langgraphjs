@@ -244,10 +244,10 @@ export {
 } from "ava-langgraph-narrative-intelligence";
 
 // Subpath exports
-import * as schemas from "@langchain/langgraph-narrative-intelligence/schemas";
-import * as graphs from "@langchain/langgraph-narrative-intelligence/graphs";
-import * as nodes from "@langchain/langgraph-narrative-intelligence/nodes";
-import * as integrations from "@langchain/langgraph-narrative-intelligence/integrations";
+import * as schemas from "ava-langgraph-narrative-intelligence/schemas";
+import * as graphs from "ava-langgraph-narrative-intelligence/graphs";
+import * as nodes from "ava-langgraph-narrative-intelligence/nodes";
+import * as integrations from "ava-langgraph-narrative-intelligence/integrations";
 ```
 
 ## Python Parity
