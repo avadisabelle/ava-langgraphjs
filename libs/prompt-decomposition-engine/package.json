@@ -58,7 +58,7 @@
   "license": "MIT",
   "dependencies": {
     "ava-langchain-prompt-decomposition": "file:../../../ava-langchainjs/libs/prompt-decomposition",
-    "uuid": "^9.0.0"
+    "uuid": "^10.0.0"
   },
   "peerDependencies": {
     "ava-langchain-relational-intelligence": ">=0.1.0",

@@ -10,6 +10,7 @@
 
 import type { DecompositionResult } from "ava-langchain-prompt-decomposition";
 import type { ThreeUniversePerspective } from "./perspective_nodes.js";
+import { CEREMONY_KEYWORDS } from "../constants.js";
 
 // =============================================================================
 // Types
@@ -80,8 +81,7 @@ export class CeremonyGate {
 
     // Check for ceremony-domain keywords in prompt
     const lower = decomposition.prompt.toLowerCase();
-    const ceremonyKeywords = ["indigenous", "ceremony", "medicine wheel", "elder", "sacred", "protocol"];
-    const hasCeremonyDomain = ceremonyKeywords.some((kw) => lower.includes(kw));
+    const hasCeremonyDomain = CEREMONY_KEYWORDS.some((kw) => lower.includes(kw));
 
     if (hasCeremonyDomain && decomposition.directions.west?.length === 0) {
       reasons.push("Indigenous/ceremonial domain work without validation/reflection dimension");

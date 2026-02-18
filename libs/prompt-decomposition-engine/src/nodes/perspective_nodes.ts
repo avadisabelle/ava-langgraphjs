@@ -49,25 +49,7 @@ export interface ThreeUniversePerspective {
   synthesis: string;
 }
 
-// Keywords each universe focuses on
-const UNIVERSE_KEYWORDS: Record<Universe, string[]> = {
-  [Universe.ENGINEER]: [
-    "build", "implement", "deploy", "code", "architecture", "pattern",
-    "package", "module", "test", "dependency", "api", "schema",
-    "performance", "scale", "infrastructure", "debug", "refactor",
-  ],
-  [Universe.CEREMONY]: [
-    "ceremony", "protocol", "relational", "accountability", "indigenous",
-    "medicine", "wheel", "consent", "elder", "community", "land",
-    "dream", "vision", "spiritual", "emotional", "respect", "reciprocity",
-    "ocap", "governance", "sovereign",
-  ],
-  [Universe.STORY_ENGINE]: [
-    "narrative", "story", "beat", "arc", "character", "theme",
-    "tension", "resolution", "climax", "meaning", "emotional",
-    "journey", "transformation", "coherence", "voice", "episode",
-  ],
-};
+import { UNIVERSE_KEYWORDS } from "../constants.js";
 
 // =============================================================================
 // PerspectiveAnalyzer
