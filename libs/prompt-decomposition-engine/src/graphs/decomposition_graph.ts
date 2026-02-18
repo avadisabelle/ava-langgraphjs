@@ -95,13 +95,13 @@ export function createInitialState(prompt: string, sessionId?: string): Decompos
  * EAST node: Vision — Extract intents and directional analysis.
  * "What is being asked?"
  */
-export function eastNode(state: DecompositionState): Partial<DecompositionState> {
+export async function eastNode(state: DecompositionState): Promise<Partial<DecompositionState>> {
   try {
     const decomposer = new DirectionalDecomposer();
     const extractor = new IntentExtractor();
 
     const directionalAnalysis = decomposer.decompose(state.prompt);
-    const intentResult = extractor.extract(state.prompt);
+    const intentResult = await extractor.extract(state.prompt);
 
     return {
       directionalAnalysis,
@@ -240,7 +240,7 @@ export class DecompositionGraph {
     let state = createInitialState(prompt, sessionId);
 
     // EAST: Vision
-    state = this.mergeState(state, eastNode(state));
+    state = this.mergeState(state, await eastNode(state));
 
     // SOUTH: Analysis
     state = this.mergeState(state, southNode(state));
@@ -263,7 +263,7 @@ export class DecompositionGraph {
    * Run individual directions.
    */
   async invokeEast(state: DecompositionState): Promise<DecompositionState> {
-    return this.mergeState(state, eastNode(state));
+    return this.mergeState(state, await eastNode(state));
   }
 
   async invokeSouth(state: DecompositionState): Promise<DecompositionState> {

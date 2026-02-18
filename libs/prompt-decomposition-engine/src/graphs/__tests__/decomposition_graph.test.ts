@@ -10,18 +10,18 @@ import {
 
 describe("DecompositionGraph", () => {
   describe("individual nodes", () => {
-    it("eastNode should extract intents and directions", () => {
+    it("eastNode should extract intents and directions", async () => {
       const state = createInitialState("Research the codebase and build a new module.");
-      const result = eastNode(state);
+      const result = await eastNode(state);
 
       expect(result.directionalAnalysis).toBeDefined();
       expect(result.intentResult).toBeDefined();
       expect(result.status).toBe("east_complete");
     });
 
-    it("southNode should build dependency graph", () => {
+    it("southNode should build dependency graph", async () => {
       let state = createInitialState("Investigate patterns. Create implementation. Test results.");
-      state = { ...state, ...eastNode(state) };
+      state = { ...state, ...await eastNode(state) };
       const result = southNode(state);
 
       expect(result.dependencyGraph).toBeDefined();
@@ -36,9 +36,9 @@ describe("DecompositionGraph", () => {
       expect(result.errors!.length).toBeGreaterThan(0);
     });
 
-    it("westNode should assess ceremony requirements", () => {
+    it("westNode should assess ceremony requirements", async () => {
       let state = createInitialState("Build code and deploy immediately.");
-      state = { ...state, ...eastNode(state) };
+      state = { ...state, ...await eastNode(state) };
       const result = westNode(state);
 
       expect(result.wheelEnriched).toBeDefined();
@@ -46,9 +46,9 @@ describe("DecompositionGraph", () => {
       expect(typeof result.ceremonyRequired).toBe("boolean");
     });
 
-    it("northNode should build action stack", () => {
+    it("northNode should build action stack", async () => {
       let state = createInitialState("Research. Build. Test.");
-      state = { ...state, ...eastNode(state) };
+      state = { ...state, ...await eastNode(state) };
       state = { ...state, ...southNode(state) };
       const result = northNode(state);
 
