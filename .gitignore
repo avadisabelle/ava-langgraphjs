@@ -29,3 +29,4 @@ __pycache__
 tsconfig.vitest-temp.json
 .pnpm-store
 .idea
+.hch/
