@@ -1,5 +1,21 @@
 # @langchain/langgraph
 
+## 1.1.4
+
+### Patch Changes
+
+- Updated dependencies [[`8d5c2d6`](https://github.com/langchain-ai/langgraphjs/commit/8d5c2d688d330012638d8f34ce20a454600ebc1b)]:
+  - @langchain/langgraph-sdk@1.6.0
+
+## 1.1.3
+
+### Patch Changes
+
+- [#1932](https://github.com/langchain-ai/langgraphjs/pull/1932) [`0cda1f3`](https://github.com/langchain-ai/langgraphjs/commit/0cda1f3b78a86e7809b7db15a7ff0ea00ee1ecd8) Thanks [@samecrowder](https://github.com/samecrowder)! - fix: preserve `langgraph_type` metadata for LangSmith Studio tab detection
+
+  - **Zod v4 `.register()` fix**: The metadata registry now properly stores and retrieves `langgraph_type` metadata when using Zod v4's `.register()` method with `MessagesZodMeta`
+  - **StateSchema fix**: `StateSchema.getJsonSchema()` now correctly includes `jsonSchemaExtra` (like `langgraph_type: "messages"`) even when the underlying schema (e.g., `z.custom()`) doesn't produce a JSON schema
+
 ## 1.1.2
 
 ### Patch Changes
