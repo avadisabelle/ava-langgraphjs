@@ -122,6 +122,21 @@ export enum NarrativeFunction {
 }
 
 /**
+ * Safely convert a string to a NarrativeFunction enum value.
+ * Defaults to NarrativeFunction.BEAT if the string does not match any enum value.
+ */
+export function getNarrativeFunctionFromString(
+  funcString: string
+): NarrativeFunction {
+  const normalizedString = funcString.toUpperCase();
+  if (Object.values(NarrativeFunction).includes(normalizedString as NarrativeFunction)) {
+    return normalizedString as NarrativeFunction;
+  }
+  return NarrativeFunction.BEAT;
+}
+
+
+/**
  * Current position in the narrative journey
  */
 export interface NarrativePosition {
@@ -628,15 +643,9 @@ export function createBeatFromWebhook(
   const storyEngineContext = universeAnalysis.storyEngine.context;
   const act = (storyEngineContext.act as number) || 2;
 
-  let narrativeFunction: NarrativeFunction;
-  try {
-    narrativeFunction =
-      NarrativeFunction[
-        universeAnalysis.storyEngine.intent.toUpperCase() as keyof typeof NarrativeFunction
-      ] || NarrativeFunction.BEAT;
-  } catch {
-    narrativeFunction = NarrativeFunction.BEAT;
-  }
+  const narrativeFunction: NarrativeFunction = getNarrativeFunctionFromString(
+    universeAnalysis.storyEngine.intent
+  );
 
   return createStoryBeat(
     `beat_${eventId}`,

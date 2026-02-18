@@ -1,4 +1,4 @@
-# @langchain/langgraph-narrative-intelligence
+# ava-langgraph-narrative-intelligence
 
 Narrative Intelligence Toolkit for JavaScript/TypeScript - a complete port of the Python `narrative-intelligence` package.
 
@@ -14,9 +14,9 @@ This package provides the core narrative intelligence components for the LangGra
 ## Installation
 
 ```bash
-npm install @langchain/langgraph-narrative-intelligence
+npm install ava-langgraph-narrative-intelligence
 # or
-yarn add @langchain/langgraph-narrative-intelligence
+yarn add ava-langgraph-narrative-intelligence
 ```
 
 ### Optional Dependencies
@@ -36,7 +36,7 @@ npm install ioredis
 Process any event through three interpretive lenses:
 
 ```typescript
-import { ThreeUniverseProcessor } from "@langchain/langgraph-narrative-intelligence";
+import { ThreeUniverseProcessor } from "ava-langgraph-narrative-intelligence";
 
 const processor = new ThreeUniverseProcessor();
 
@@ -64,7 +64,7 @@ import {
   NarrativeCoherenceEngine,
   createStoryBeat,
   NarrativeFunction,
-} from "@langchain/langgraph-narrative-intelligence";
+} from "ava-langgraph-narrative-intelligence";
 
 const engine = new NarrativeCoherenceEngine();
 
@@ -106,7 +106,7 @@ import {
   addBeat,
   createStoryBeat,
   NarrativeFunction,
-} from "@langchain/langgraph-narrative-intelligence";
+} from "ava-langgraph-narrative-intelligence";
 
 // Create a new state with default characters (Mia, Ava8, Miette)
 const state = createUnifiedNarrativeState("story_123", "session_456");
@@ -136,7 +136,7 @@ console.log(`Lead universe: ${state.position.leadUniverse}`);
 Use Redis for cross-system state sharing:
 
 ```typescript
-import { NarrativeRedisManager, createRedisConfig } from "@langchain/langgraph-narrative-intelligence";
+import { NarrativeRedisManager, createRedisConfig } from "ava-langgraph-narrative-intelligence";
 
 const manager = new NarrativeRedisManager(createRedisConfig({
   url: "redis://localhost:6379",
@@ -202,7 +202,7 @@ Connect to the `@langchain/langchain-narrative-tracing` package:
 
 ```typescript
 import { LangGraphBridge } from "@langchain/langchain-narrative-tracing";
-import { ThreeUniverseProcessor } from "@langchain/langgraph-narrative-intelligence";
+import { ThreeUniverseProcessor } from "ava-langgraph-narrative-intelligence";
 
 const bridge = new LangGraphBridge(handler);
 
@@ -241,7 +241,7 @@ export {
   // Redis
   NarrativeRedisManager,
   MockRedis,
-} from "@langchain/langgraph-narrative-intelligence";
+} from "ava-langgraph-narrative-intelligence";
 
 // Subpath exports
 import * as schemas from "@langchain/langgraph-narrative-intelligence/schemas";

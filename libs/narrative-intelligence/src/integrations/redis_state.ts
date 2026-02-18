@@ -141,7 +141,14 @@ export class NarrativeRedisManager {
     // Try to use ioredis if available
     try {
       // Dynamic import for optional Redis dependency
-      const Redis = await import("ioredis").then((m) => m.default).catch(() => null);
+      let Redis: any;
+      try {
+        const ioredisModule = await import("ioredis");
+        Redis = ioredisModule.default;
+      } catch (importError) {
+        console.warn("ioredis module not found. Falling back to MockRedis.", importError);
+        // Fall through to mock if ioredis is not available
+      }
 
       if (Redis) {
         const redisUrl =
@@ -149,27 +156,32 @@ export class NarrativeRedisManager {
           `redis://${this.config.password ? `:${this.config.password}@` : ""}${this.config.host}:${this.config.port}/${this.config.db}`;
 
         const redis = new Redis(redisUrl);
-        await redis.ping();
-
-        this.redis = {
-          ping: () => redis.ping(),
-          get: (key) => redis.get(key),
-          set: (key, value) => redis.set(key, value),
-          setex: (key, ttl, value) => redis.setex(key, ttl, value),
-          del: (...keys) => redis.del(...keys),
-          keys: (pattern) => redis.keys(pattern),
-          rpush: (key, value) => redis.rpush(key, value),
-          lrange: (key, start, end) => redis.lrange(key, start, end),
-          ltrim: (key, start, end) => redis.ltrim(key, start, end),
-          expire: (key, ttl) => redis.expire(key, ttl),
-          quit: () => redis.quit(),
-        };
-        this.connected = true;
-        console.log("Connected to Redis for narrative state management");
-        return;
+        try {
+          await redis.ping();
+          this.redis = {
+            ping: () => redis.ping(),
+            get: (key) => redis.get(key),
+            set: (key, value) => redis.set(key, value),
+            setex: (key, ttl, value) => redis.setex(key, ttl, value),
+            del: (...keys) => redis.del(...keys),
+            keys: (pattern) => redis.keys(pattern),
+            rpush: (key, value) => redis.rpush(key, value),
+            lrange: (key, start, end) => redis.lrange(key, start, end),
+            ltrim: (key, start, end) => redis.ltrim(key, start, end),
+            expire: (key, ttl) => redis.expire(key, ttl),
+            quit: () => redis.quit(),
+          };
+          this.connected = true;
+          console.log("Connected to Redis for narrative state management");
+          return;
+        } catch (connectionError) {
+          console.error("Failed to connect to Redis, using MockRedis instead:", connectionError);
+          // Fall through to mock if connection fails
+        }
       }
-    } catch {
-      // Redis not available, use mock
+    } catch (unexpectedError) {
+      console.error("An unexpected error occurred during Redis setup, using MockRedis instead:", unexpectedError);
+      // Fall through to mock for any other unexpected errors
     }
 
     // Fall back to mock

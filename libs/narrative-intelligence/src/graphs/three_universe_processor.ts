@@ -21,6 +21,7 @@ import {
   createUniversePerspective,
   createThreeUniverseAnalysis,
   createStoryBeat,
+  getNarrativeFunctionFromString,
 } from "../schemas/unified_state_bridge.js";
 
 /**
@@ -1067,20 +1068,8 @@ export class ThreeUniverseProcessor {
     sequence: number
   ): StoryBeat {
     // Map story engine intent to NarrativeFunction
-    const functionMap: Record<string, NarrativeFunction> = {
-      inciting_incident: NarrativeFunction.INCITING_INCIDENT,
-      rising_action: NarrativeFunction.RISING_ACTION,
-      turning_point: NarrativeFunction.TURNING_POINT,
-      complication: NarrativeFunction.COMPLICATION,
-      crisis: NarrativeFunction.CRISIS,
-      climax: NarrativeFunction.CLIMAX,
-      resolution: NarrativeFunction.RESOLUTION,
-      denouement: NarrativeFunction.DENOUEMENT,
-    };
-
     const storyIntent = analysis.storyEngine.intent;
-    const narrativeFunc =
-      functionMap[storyIntent] || NarrativeFunction.BEAT;
+    const narrativeFunc = getNarrativeFunctionFromString(storyIntent);
 
     // Extract act
     const act = (analysis.storyEngine.context.act as number) || 2;
