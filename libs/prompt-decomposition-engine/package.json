@@ -1,6 +1,6 @@
 {
   "name": "ava-langgraph-prompt-decomposition-engine",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Prompt Decomposition Engine for LangGraph.js - Graph-level orchestration of Four Directions analysis, three-universe perspective processing, and ceremony gating",
   "type": "module",
   "engines": {
@@ -57,7 +57,7 @@
   "author": "ava",
   "license": "MIT",
   "dependencies": {
-    "ava-langchain-prompt-decomposition": "file:../../../ava-langchainjs/libs/prompt-decomposition",
+    "ava-langchain-prompt-decomposition": "^0.1.1",
     "uuid": "^10.0.0"
   },
   "peerDependencies": {
