@@ -28,6 +28,15 @@ import {
   type DependencyGraph,
 } from "ava-langchain-prompt-decomposition";
 
+// StoredDecomposition type defined locally to avoid DTS dependency on upstream build
+interface StoredDecomposition {
+  id: string;
+  timestamp: string;
+  prompt: string;
+  result: DecompositionResult;
+  markdownPath?: string;
+}
+
 // =============================================================================
 // State
 // =============================================================================
@@ -63,6 +72,9 @@ export interface DecompositionState {
   /** NORTH: Final decomposition result */
   decomposition: DecompositionResult | null;
 
+  /** Storage: Persisted decomposition (if workdir provided) */
+  stored: StoredDecomposition | null;
+
   /** Processing status */
   status: "pending" | "east_complete" | "south_complete" | "west_complete" | "complete" | "ceremony_hold";
 
@@ -82,6 +94,7 @@ export function createInitialState(prompt: string, sessionId?: string): Decompos
     ceremonyRequired: false,
     relationalGuidance: [],
     decomposition: null,
+    stored: null,
     status: "pending",
     errors: [],
   };
@@ -217,6 +230,8 @@ export function northNode(state: DecompositionState): Partial<DecompositionState
 export interface DecompositionGraphOptions {
   /** If true, halt at ceremony_hold instead of continuing (default false) */
   enforeCeremony?: boolean;
+  /** Working directory for .pde/ storage. If set, decompositions are persisted. */
+  workdir?: string;
 }
 
 /**
@@ -228,9 +243,11 @@ export interface DecompositionGraphOptions {
  */
 export class DecompositionGraph {
   private readonly enforceCeremony: boolean;
+  private readonly workdir?: string;
 
   constructor(options?: DecompositionGraphOptions) {
     this.enforceCeremony = options?.enforeCeremony ?? false;
+    this.workdir = options?.workdir;
   }
 
   /**
@@ -255,6 +272,22 @@ export class DecompositionGraph {
 
     // NORTH: Action
     state = this.mergeState(state, northNode(state));
+
+    // STORAGE: Persist to .pde/ if workdir is configured
+    if (this.workdir && state.decomposition) {
+      try {
+        // Dynamic import; saveDecomposition exists in the JS bundle
+        const pdeModule = await import("ava-langchain-prompt-decomposition") as any;
+        if (typeof pdeModule.saveDecomposition === "function") {
+          const stored = pdeModule.saveDecomposition(this.workdir, state.decomposition) as StoredDecomposition;
+          state = this.mergeState(state, { stored });
+        }
+      } catch (e) {
+        state = this.mergeState(state, {
+          errors: [...state.errors, `STORAGE: ${(e as Error).message}`],
+        });
+      }
+    }
 
     return state;
   }

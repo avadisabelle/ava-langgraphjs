@@ -88,3 +88,34 @@ export {
   type IntentExtractionResult,
   type WheelEnrichedAnalysis,
 } from "ava-langchain-prompt-decomposition";
+
+// =============================================================================
+// Re-exported types from langchainjs (mcp-pde lineage)
+// Defined inline to avoid DTS resolution dependency on upstream build
+// =============================================================================
+
+/** Structured ambiguity flag (mcp-pde lineage) */
+export interface AmbiguityFlag {
+  text: string;
+  suggestion: string;
+}
+
+/** Expected outputs from the decomposition (mcp-pde lineage) */
+export interface ExpectedOutputs {
+  artifacts: string[];
+  updates: string[];
+  communications: string[];
+}
+
+/** Persisted decomposition stored in .pde/ folder */
+export interface StoredDecomposition {
+  id: string;
+  timestamp: string;
+  prompt: string;
+  result: import("ava-langchain-prompt-decomposition").DecompositionResult;
+  markdownPath?: string;
+}
+
+// Note: Storage functions (saveDecomposition, loadDecomposition, etc.)
+// are integrated into DecompositionGraph via the `workdir` option.
+// For direct access, import from "ava-langchain-prompt-decomposition".
