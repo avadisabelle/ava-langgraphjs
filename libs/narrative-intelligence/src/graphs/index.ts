@@ -45,3 +45,29 @@ export {
   // Main class
   NarrativeCoherenceEngine,
 } from "./coherence_engine.js";
+
+// Structural Thinking Graph
+export {
+  // Interfaces
+  StructuralTensionSnapshot,
+  ThinkingSection,
+  ThinkingDocument,
+  ReviewAnnotation,
+  StructuralThinkingState,
+  StructuralThinkingOptions,
+  // Main class
+  StructuralThinkingGraph,
+} from "./structural_thinking_graph.js";
+
+// Episode Retrieval Subgraph
+export {
+  // Interfaces
+  EpisodeBundleMinimal,
+  RetrievalQuery,
+  ConsentContext,
+  RetrievalResult,
+  EpisodeRetrievalState,
+  EpisodeRetrievalOptions,
+  // Main class
+  EpisodeRetrievalSubgraph,
+} from "./episode_retrieval.js";

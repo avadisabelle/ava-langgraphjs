@@ -142,6 +142,28 @@ export {
   NarrativeCoherenceEngine,
 } from "./graphs/coherence_engine.js";
 
+export {
+  // Structural Thinking Graph
+  StructuralTensionSnapshot,
+  ThinkingSection,
+  ThinkingDocument,
+  ReviewAnnotation,
+  StructuralThinkingState,
+  StructuralThinkingOptions,
+  StructuralThinkingGraph,
+} from "./graphs/structural_thinking_graph.js";
+
+export {
+  // Episode Retrieval Subgraph
+  EpisodeBundleMinimal,
+  RetrievalQuery,
+  ConsentContext,
+  RetrievalResult,
+  EpisodeRetrievalState,
+  EpisodeRetrievalOptions,
+  EpisodeRetrievalSubgraph,
+} from "./graphs/episode_retrieval.js";
+
 // ============================================================================
 // Nodes - Individual Processing Steps
 // ============================================================================

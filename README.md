@@ -61,6 +61,37 @@ const result = await agent.invoke({
 });
 ```
 
+## 🌿 AvaLangStack — Custom Graph Libraries
+
+This fork includes custom graph libraries for the **AvaLangStack Narrative Intelligence ecosystem**:
+
+| Package | Description |
+|---------|-------------|
+| `ava-langgraph-prompt-decomposition-engine` | StateGraph wrapping PDE primitives from ava-langchainjs |
+| `ava-langgraph-inquiry-routing-engine` | Graph-based inquiry routing with ceremony gating |
+| `ava-langgraph-narrative-intelligence` | Three-Universe processing, coherence analysis, structural thinking |
+
+### Architecture
+
+```
+ava-langchainjs (chain primitives)
+  └─ consumed by ─→ ava-langgraphjs (graph pipelines)
+```
+
+- **langchainjs** provides pure-function chain primitives (keyword-based, no LLM)
+- **langgraphjs** wraps them in Four Directions StateGraph pipelines with ceremony gating
+
+### Key Components
+
+- **ThreeUniverseProcessor** — Processes events through Engineer/Ceremony/StoryEngine lenses
+- **NarrativeCoherenceEngine** — Analyzes beat/character/theme coherence with Trinity assessment
+- **StructuralThinkingGraph** — 4-node pipeline: picture → draft → review → revise
+- **EpisodeRetrievalSubgraph** — Consent-gated episode retrieval with kinship awareness
+
+See [examples/avalangstack/](examples/avalangstack/) for complete demonstrations.
+
+> **Depends on**: [ava-langchainjs](https://github.com/avadisabelle/ava-langchainjs) for chain primitives.
+
 ## Full-stack Quickstart
 
 Get started quickly by building a full-stack LangGraph application using the [`create-agent-chat-app`](https://www.npmjs.com/package/create-agent-chat-app) CLI:
