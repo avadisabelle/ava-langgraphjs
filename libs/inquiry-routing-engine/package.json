@@ -1,6 +1,6 @@
 {
   "name": "ava-langgraph-inquiry-routing-engine",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Inquiry Routing Engine for LangGraph.js — Graph-level orchestration of PDE-to-Inquiry pipelines with Four Directions routing, relational accountability gating, and multi-channel dispatch",
   "type": "module",
   "engines": {
@@ -25,7 +25,10 @@
       "require": "./dist/nodes/index.cjs"
     }
   },
-  "files": ["dist", "src"],
+  "files": [
+    "dist",
+    "src"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -41,8 +44,16 @@
     "directory": "libs/inquiry-routing-engine"
   },
   "keywords": [
-    "langgraph", "inquiry", "routing", "pde", "medicine-wheel",
-    "four-directions", "relational", "accountability", "dispatch", "graph"
+    "langgraph",
+    "inquiry",
+    "routing",
+    "pde",
+    "medicine-wheel",
+    "four-directions",
+    "relational",
+    "accountability",
+    "dispatch",
+    "graph"
   ],
   "author": "ava",
   "license": "MIT",
@@ -54,8 +65,12 @@
     "ava-langchain-inquiry-routing": ">=0.1.0"
   },
   "peerDependenciesMeta": {
-    "ava-langchain-prompt-decomposition": { "optional": false },
-    "ava-langchain-inquiry-routing": { "optional": false }
+    "ava-langchain-prompt-decomposition": {
+      "optional": false
+    },
+    "ava-langchain-inquiry-routing": {
+      "optional": false
+    }
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
