@@ -1,9 +1,0 @@
-{
-  "name": "@examples/avalangstack",
-  "type": "module",
-  "private": true,
-  "devDependencies": {
-    "ava-langgraph-narrative-intelligence": "workspace:*",
-    "tsx": "^4.21.0"
-  }
-}

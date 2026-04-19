@@ -1,6 +1,7 @@
 packages:
   - 'docs'
-  - 'examples/*'
-  - 'libs/*'
-  - 'internal/*'
-
+  - 'libs/inquiry-routing-engine'
+  - 'libs/prompt-decomposition-engine'
+  - 'libs/narrative-intelligence'
+  - 'internal/build'
+  - 'internal/environment_tests'

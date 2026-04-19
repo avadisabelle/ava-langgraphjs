@@ -1,0 +1,30 @@
+Package: inquiry-routing-engine
+Desired Outcome:
+A graph-level orchestration engine that wraps the `ava-langchain-inquiry-routing` chain primitives into a state machine with four directional nodes — EAST(Generate) → SOUTH(Route) → WEST(Validate) → NORTH(Dispatch) — adding relational accountability gating (`ceremony_hold`), multi-channel dispatch formatting, and LangGraph `StateGraph` integration as a compilable subgraph.
+Consumers invoke `InquiryRoutingGraph.invoke(decomposition)` and receive a fully processed `InquiryRoutingState` with dispatch-ready payloads for QMD, deep-search, and workspace-scan channels.
+
+Structural Tension:
+Chain primitives produce *components*; agentic workflows need *orchestrated state machines* with accountability gates. The tension between primitive flexibility and pipeline safety resolves through a four-node graph with `ceremony_hold` as a structural pause — the system stops itself when relational integrity requires human presence.
+---
+Package: prompt-decomposition-engine
+Desired Outcome:
+The **ava-langgraph-prompt-decomposition-engine** enables developers to create **graph-orchestrated prompt decomposition workflows** that:
+1. **State-Based Decomposition Graph** — A four-node graph running EAST→SOUTH→WEST→NORTH as a LangGraph-compatible state machine
+2. **Three-Universe Perspective Analysis** — Each decomposition viewed through Mia (Engineer), Ava8 (Ceremony), and Miette (Story Engine) lenses
+3. **Ceremony Gating** — Relational accountability gating that can PROCEED, CAUTION, or HOLD execution based on balance and sacred domain analysis
+4. **Subgraph Composability** — The decomposition graph can be embedded as a subgraph in larger LangGraph workflows
+
+Structural Tension:
+The core tension arises from the need to transform flexible, chain-level decomposition primitives into robust, graph-orchestrated workflows that integrate multi-perspective analysis and enforce relational accountability. The challenge lies in building a composable state machine that manages transitions, maintains a holistic view through different "universes" (Mia, Ava8, Miette), and enforces "ceremony gating" to ensure ethical and relationally sound execution.
+---
+Package: narrative-intelligence
+Desired Outcome:
+The **ava-langgraph-narrative-intelligence** package enables developers to create **narrative-aware processing systems** that analyze events through three interpretive universes:
+1. **Three-Universe Event Processing** — Every event is analyzed through Engineer (Mia — technical precision), Ceremony (Ava8 — relational protocols), and Story Engine (Miette — narrative patterns) perspectives, with lead universe determination and coherence scoring
+2. **Narrative Coherence Analysis** — The `NarrativeCoherenceEngine` scores narrative health across structural, thematic, character, sensory, and continuity dimensions, identifies gaps with severity and routing targets, and produces a Trinity assessment (Mia/Miette/Ava8 synthesis)
+3. **Emotional Beat Classification** — The `EmotionalBeatClassifierNode` classifies story beats across 10 emotional tones (Devastating, Hopeful, Tense, Joyful, Melancholic, Triumphant, Fearful, Peaceful, Conflicted, Resigned) with keyword scoring and confidence metrics
+4. **Unified Narrative State Management** — A shared state contract (`UnifiedNarrativeState`) across six systems in the stack, with Redis-backed persistence through `NarrativeRedisManager` and episode lifecycle management
+5. **NCP (Narrative Context Protocol) Schema** — Full NCP data model with Moments, StoryPoints, NCPStoryBeats, Players, and Perspectives — enabling structured narrative data exchange across the Storytelling system
+
+Structural Tension:
+The current reality provides complete three-universe processing, coherence analysis, emotional classification, and state management. The creative tension lives in advancing toward **structural thinking** — a four-node graph (picture→draft→review→revise) that ports miaco's `pde-to-st` command into a LangGraph subgraph — and toward **consent-gated episode retrieval** that respects relational accountability when surfacing historical narrative context.
