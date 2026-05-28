@@ -50,14 +50,13 @@ export interface StateGraphFactoryOptions {
  * The graph follows EAST(Generate) → SOUTH(Route) → WEST(Validate) → (ceremony check) → NORTH(Dispatch).
  */
 export async function createInquiryRoutingStateGraph(options?: StateGraphFactoryOptions) {
-  // Dynamic import — use variable to prevent TypeScript DTS from resolving the module.
+  // Dynamic import — use literal string to satisfy Vite/Rollup analysis.
   // `any` is required here because @langchain/langgraph types are not available at compile time
   // (it's a peer dependency loaded dynamically). The node callbacks below use
   // InquiryRoutingState directly via the imported node functions.
   let StateGraph: any, END: any, START: any; // eslint-disable-line @typescript-eslint/no-explicit-any
   try {
-    const pkgName = "@langchain/langgraph";
-    const mod = await import(/* webpackIgnore: true */ pkgName);
+    const mod = await import("@langchain/langgraph");
     StateGraph = mod.StateGraph;
     END = mod.END;
     START = mod.START;
