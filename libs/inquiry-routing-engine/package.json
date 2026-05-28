@@ -31,6 +31,7 @@
   ],
   "scripts": {
     "build": "tsup",
+    "build:compile": "tsup",
     "dev": "tsup --watch",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
@@ -62,7 +63,8 @@
   },
   "peerDependencies": {
     "ava-langchain-prompt-decomposition": ">=0.1.0",
-    "ava-langchain-inquiry-routing": ">=0.1.0"
+    "ava-langchain-inquiry-routing": ">=0.1.0",
+    "@langchain/langgraph": ">=0.2.0"
   },
   "peerDependenciesMeta": {
     "ava-langchain-prompt-decomposition": {
@@ -70,6 +72,9 @@
     },
     "ava-langchain-inquiry-routing": {
       "optional": false
+    },
+    "@langchain/langgraph": {
+      "optional": true
     }
   },
   "devDependencies": {

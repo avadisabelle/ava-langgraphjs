@@ -50,13 +50,13 @@ export interface StateGraphFactoryOptions {
  * The graph follows EAST(Generate) → SOUTH(Route) → WEST(Validate) → (ceremony check) → NORTH(Dispatch).
  */
 export async function createInquiryRoutingStateGraph(options?: StateGraphFactoryOptions) {
-  // Dynamic import — use literal string to satisfy Vite/Rollup analysis.
+  // Dynamic import — use literal string with @vite-ignore to prevent Vite from resolving during build.
   // `any` is required here because @langchain/langgraph types are not available at compile time
   // (it's a peer dependency loaded dynamically). The node callbacks below use
   // InquiryRoutingState directly via the imported node functions.
   let StateGraph: any, END: any, START: any; // eslint-disable-line @typescript-eslint/no-explicit-any
   try {
-    const mod = await import("@langchain/langgraph");
+    const mod = await import(/* @vite-ignore */ "@langchain/langgraph");
     StateGraph = mod.StateGraph;
     END = mod.END;
     START = mod.START;
@@ -83,7 +83,12 @@ export async function createInquiryRoutingStateGraph(options?: StateGraphFactory
     dispatchedInquiries: { default: () => null },
     dispatchPayloads: { default: () => null },
     status: { default: () => "pending" },
-    errors: { default: () => [] as string[] },
+    errors: {
+      default: () => [] as string[],
+      // Accumulate across nodes rather than last-write-wins.
+      // Fixes: avadisabelle/ava-langgraphjs#8
+      value: (prev: string[], next: string[]) => [...prev, ...next],
+    },
   };
 
   // Node callbacks use `any` for the state parameter because the StateGraph API

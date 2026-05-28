@@ -36,7 +36,7 @@
  * ```
  */
 
-export const VERSION = "0.1.0";
+export const VERSION = "0.1.8";
 
 // =============================================================================
 // Graphs
@@ -49,6 +49,7 @@ export {
   southNode,
   westNode,
   northNode,
+  DecompositionGraphStorageOptions,
   DecompositionGraphOptions,
   DecompositionGraph,
   StateGraphFactoryOptions,
@@ -113,6 +114,12 @@ export interface StoredDecomposition {
   timestamp: string;
   prompt: string;
   result: import("ava-langchain-prompt-decomposition").DecompositionResult;
+  engine?: string;
+  model?: string;
+  parent_pde_id?: string;
+  child_kind?: string;
+  folder_name?: string;
+  pde_dir?: string;
   markdownPath?: string;
 }
 

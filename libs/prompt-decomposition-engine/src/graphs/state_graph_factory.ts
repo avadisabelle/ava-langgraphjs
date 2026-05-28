@@ -47,10 +47,10 @@ export interface StateGraphFactoryOptions {
  * The graph follows EAST → SOUTH → WEST → (ceremony check) → NORTH flow.
  */
 export async function createDecompositionStateGraph(options?: StateGraphFactoryOptions) {
-  // Dynamic import — use literal string to satisfy Vite/Rollup analysis
+  // Dynamic import — use literal string with @vite-ignore to prevent Vite from resolving during build
   let StateGraph: any, END: any, START: any;
   try {
-    const mod = await import("@langchain/langgraph");
+    const mod = await import(/* @vite-ignore */ "@langchain/langgraph");
     StateGraph = mod.StateGraph;
     END = mod.END;
     START = mod.START;
@@ -73,10 +73,20 @@ export async function createDecompositionStateGraph(options?: StateGraphFactoryO
     executionOrder: { default: () => null },
     wheelEnriched: { default: () => null },
     ceremonyRequired: { default: () => false },
-    relationalGuidance: { default: () => [] as string[] },
+    relationalGuidance: {
+      default: () => [] as string[],
+      // Accumulate across nodes rather than last-write-wins.
+      // Fixes: avadisabelle/ava-langgraphjs#8
+      value: (prev: string[], next: string[]) => [...prev, ...next],
+    },
     decomposition: { default: () => null },
     status: { default: () => "pending" },
-    errors: { default: () => [] as string[] },
+    errors: {
+      default: () => [] as string[],
+      // Accumulate across nodes rather than last-write-wins.
+      // Fixes: avadisabelle/ava-langgraphjs#8
+      value: (prev: string[], next: string[]) => [...prev, ...next],
+    },
   };
 
   const graph = new StateGraph({ channels })

@@ -31,6 +31,7 @@
   ],
   "scripts": {
     "build": "tsup",
+    "build:compile": "tsup",
     "dev": "tsup --watch",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
@@ -62,13 +63,17 @@
   },
   "peerDependencies": {
     "ava-langchain-relational-intelligence": ">=0.1.0",
-    "ava-langgraph-narrative-intelligence": ">=0.1.0"
+    "ava-langgraph-narrative-intelligence": ">=0.1.0",
+    "@langchain/langgraph": ">=0.2.0"
   },
   "peerDependenciesMeta": {
     "ava-langgraph-narrative-intelligence": {
       "optional": true
     },
     "ava-langchain-relational-intelligence": {
+      "optional": true
+    },
+    "@langchain/langgraph": {
       "optional": true
     }
   },
