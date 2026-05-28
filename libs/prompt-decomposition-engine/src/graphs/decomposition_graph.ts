@@ -34,7 +34,68 @@ interface StoredDecomposition {
   timestamp: string;
   prompt: string;
   result: DecompositionResult;
+  engine?: string;
+  model?: string;
+  parent_pde_id?: string;
+  child_kind?: ChildKind;
+  fallback?: PdeFallbackMetadata;
+  folder_name?: string;
+  pde_dir?: string;
   markdownPath?: string;
+}
+
+type ChildKind =
+  | "milestone"
+  | "issue"
+  | "sub-task"
+  | "follow-up"
+  | "refinement"
+  | "sibling";
+
+type PdeSessionIdSource = "engine" | "manual" | "inherited" | "unknown";
+
+interface EngineFallbackAttempt {
+  engine: string;
+  model?: string;
+  ok: boolean;
+  error?: string;
+}
+
+interface PdeFallbackMetadata {
+  reason: string;
+  from_engine: string;
+  to_engine: string;
+  attempts: EngineFallbackAttempt[];
+  triggered_at: string;
+}
+
+export interface DecompositionGraphStorageOptions {
+  /**
+   * "flat" preserves the original .pde/<id>.json layout.
+   * "tree" requests miaco-style .pde/<timestamp>--<uuid>/ metadata.
+   */
+  layout?: "flat" | "tree";
+  engine?: string;
+  model?: string;
+  sessionId?: string;
+  sessionIdSource?: PdeSessionIdSource;
+  parentPdeId?: string;
+  parentPdeFolder?: string;
+  childKind?: ChildKind;
+  provenance?: Record<string, unknown>;
+  addDirs?: string[];
+  pvaProvider?: string;
+  pvaThinking?: string;
+  hermesProvider?: string;
+  fallback?: PdeFallbackMetadata;
+}
+
+interface PromptDecompositionStorageModule {
+  saveDecomposition?: (
+    workdir: string,
+    decomposition: DecompositionResult,
+    options?: DecompositionGraphStorageOptions
+  ) => StoredDecomposition;
 }
 
 // =============================================================================
@@ -229,9 +290,13 @@ export function northNode(state: DecompositionState): Partial<DecompositionState
 
 export interface DecompositionGraphOptions {
   /** If true, halt at ceremony_hold instead of continuing (default false) */
+  enforceCeremony?: boolean;
+  /** @deprecated Use enforceCeremony. Kept for existing callers. */
   enforeCeremony?: boolean;
   /** Working directory for .pde/ storage. If set, decompositions are persisted. */
   workdir?: string;
+  /** Optional storage lineage metadata passed to ava-langchain-prompt-decomposition. */
+  storage?: DecompositionGraphStorageOptions;
 }
 
 /**
@@ -244,10 +309,12 @@ export interface DecompositionGraphOptions {
 export class DecompositionGraph {
   private readonly enforceCeremony: boolean;
   private readonly workdir?: string;
+  private readonly storage?: DecompositionGraphStorageOptions;
 
   constructor(options?: DecompositionGraphOptions) {
-    this.enforceCeremony = options?.enforeCeremony ?? false;
+    this.enforceCeremony = options?.enforceCeremony ?? options?.enforeCeremony ?? false;
     this.workdir = options?.workdir;
+    this.storage = options?.storage;
   }
 
   /**
@@ -276,10 +343,21 @@ export class DecompositionGraph {
     // STORAGE: Persist to .pde/ if workdir is configured
     if (this.workdir && state.decomposition) {
       try {
-        // Dynamic import; saveDecomposition exists in the JS bundle
-        const pdeModule = await import("ava-langchain-prompt-decomposition") as any;
+        // Dynamic import keeps older chain package builds usable.
+        const pdeModule = (await import(
+          "ava-langchain-prompt-decomposition"
+        )) as PromptDecompositionStorageModule;
         if (typeof pdeModule.saveDecomposition === "function") {
-          const stored = pdeModule.saveDecomposition(this.workdir, state.decomposition) as StoredDecomposition;
+          const storageOptions: DecompositionGraphStorageOptions = {
+            ...this.storage,
+            sessionId: this.storage?.sessionId ?? state.sessionId,
+            sessionIdSource: this.storage?.sessionIdSource ?? "manual",
+          };
+          const stored = pdeModule.saveDecomposition(
+            this.workdir,
+            state.decomposition,
+            storageOptions
+          );
           state = this.mergeState(state, { stored });
         }
       } catch (e) {
@@ -290,6 +368,18 @@ export class DecompositionGraph {
     }
 
     return state;
+  }
+
+  /**
+   * Simple alias for invoke that returns the decomposition result directly.
+   * Satisfies the consistent engine interface.
+   */
+  async decompose(prompt: string): Promise<DecompositionResult> {
+    const state = await this.invoke(prompt);
+    if (!state.decomposition) {
+      throw new Error(state.errors.join("; ") || "Decomposition failed");
+    }
+    return state.decomposition;
   }
 
   /**
