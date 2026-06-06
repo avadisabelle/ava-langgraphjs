@@ -1,4 +1,7 @@
 export {
+  StrategyMetadata,
+  DecompositionWithProvenance,
+  InquiryRoutingInput,
   InquiryRoutingState,
   createInitialState,
   generateNode,

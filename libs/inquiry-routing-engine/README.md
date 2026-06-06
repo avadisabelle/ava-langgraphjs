@@ -4,7 +4,7 @@ Graph-level orchestration for the Inquiry Routing pipeline. This package provide
 
 ## Overview
 
-The Inquiry Routing Engine sits downstream of the Prompt Decomposition Engine (PDE). It consumes a `DecompositionResult` and orchestrates a four-stage pipeline:
+The Inquiry Routing Engine sits downstream of the Prompt Decomposition Engine (PDE). It consumes either a legacy `DecompositionResult` or a strategy-aware `DecompositionWithProvenance` and orchestrates a four-stage pipeline:
 
 1. **EAST (Generate)** — Produce structured inquiries from decomposition actions
 2. **SOUTH (Route)** — Classify and route each inquiry to source channels (QMD, deep-search, workspace-scan)
@@ -18,6 +18,7 @@ The Inquiry Routing Engine sits downstream of the Prompt Decomposition Engine (P
 - **`DispatchFormatter`**: Multi-channel formatting (QMD lex/vec/hyde, academic deep-search, workspace glob/grep)
 - **`createInquiryRoutingStateGraph()`**: LangGraph-compatible StateGraph factory for subgraph composition
 - **Ceremony Hold**: Configurable halt when Indigenous/ceremonial content lacks proper relational markers
+- **Strategy Validation**: Converts multi-pass strategy disagreements into WEST validation inquiries
 
 ## Installation
 
@@ -56,12 +57,20 @@ if (state.ceremonyRequired) {
 }
 ```
 
+For a strategy-aware PDE graph, pass the enriched handoff instead:
+
+```typescript
+const state = await routingGraph.invoke(
+  pdeState.decompositionWithProvenance!,
+);
+```
+
 ## Architecture
 
 ### State Flow
 
 ```
-DecompositionResult
+DecompositionResult | DecompositionWithProvenance
         │
         ▼
   ┌─────────────┐

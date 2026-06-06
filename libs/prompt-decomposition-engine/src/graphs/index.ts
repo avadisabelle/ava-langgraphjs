@@ -5,6 +5,10 @@ export {
   southNode,
   westNode,
   northNode,
+  DecompositionGraphStorageOptions,
+  DecompositionGraphStrategyOptions,
+  StrategyMetadata,
+  DecompositionWithProvenance,
   DecompositionGraphOptions,
   DecompositionGraph,
 } from "./decomposition_graph.js";

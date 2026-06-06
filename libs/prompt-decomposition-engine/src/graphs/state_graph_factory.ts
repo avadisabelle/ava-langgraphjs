@@ -80,6 +80,9 @@ export async function createDecompositionStateGraph(options?: StateGraphFactoryO
       value: (prev: string[], next: string[]) => [...prev, ...next],
     },
     decomposition: { default: () => null },
+    strategyMetadata: { default: () => null },
+    decompositionWithProvenance: { default: () => null },
+    stored: { default: () => null },
     status: { default: () => "pending" },
     errors: {
       default: () => [] as string[],

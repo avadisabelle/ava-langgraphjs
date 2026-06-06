@@ -58,7 +58,7 @@
   "author": "ava",
   "license": "MIT",
   "dependencies": {
-    "ava-langchain-prompt-decomposition": "^0.1.8",
+    "ava-langchain-prompt-decomposition": ">=0.1.8",
     "uuid": "^10.0.0"
   },
   "peerDependencies": {

@@ -9,6 +9,8 @@ The Prompt Decomposition Engine (PDE) orchestrates a multi-stage process for ana
 ## Features
 
 -   **`DecompositionGraph`**: Orchestrates the core decomposition pipeline (EAST → SOUTH → WEST → NORTH).
+-   **Optional strategic decomposition**: Selects keyword, semantic, hybrid, or multi-pass decomposition and exposes versioned provenance for downstream graphs.
+-   **PDE lineage storage**: Persists flat artifacts or folder-backed PDE trees with parent-child and runtime provenance.
 -   **`PerspectiveAnalyzer`**: Analyzes prompt decompositions through the lenses of Engineer (Mia), Ceremony (Ava8), and Story Engine (Miette) universes, enriching the process with multi-dimensional insights.
 -   **`CeremonyGate`**: Provides a mechanism for relational accountability, gating execution based on ceremonial requirements and ethical considerations, ensuring thoughtful progression.
 
@@ -64,6 +66,24 @@ if (state.decomposition) {
 }
 ```
 
+### Strategy-Aware Handoff
+
+```typescript
+const graph = new DecompositionGraph({
+  strategy: {
+    enabled: true,
+    preferences: { alwaysMultiPass: true },
+  },
+  workdir: process.cwd(),
+  storage: { layout: "tree", engine: "codex" },
+});
+
+const state = await graph.invoke("Research, design, build, and validate the service.");
+
+// Pass this directly to ava-langgraph-inquiry-routing-engine.
+const handoff = state.decompositionWithProvenance;
+```
+
 ## Core Concepts
 
 ### The Four Directions of Decomposition
@@ -94,6 +114,7 @@ Consult the JSDoc comments within the source code for detailed API documentation
 ### Main Exports
 
 -   `DecompositionGraph`: The orchestrator for the decomposition pipeline.
+-   `DecompositionWithProvenance`: Stable decomposition plus strategy metadata handoff.
 -   `PerspectiveAnalyzer`: Tool for analyzing prompts through three universe lenses.
 -   `CeremonyGate`: Mechanism for evaluating ceremonial requirements and gating execution.
 -   Re-exports from `ava-langchain-prompt-decomposition`: Core primitives like `DirectionalDecomposer`, `IntentExtractor`, `DependencyMapper`, `ActionStackBuilder`, and `MedicineWheelBridge`.

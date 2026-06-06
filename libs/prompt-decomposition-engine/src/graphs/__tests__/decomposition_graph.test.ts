@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   DecompositionGraph,
   createInitialState,
@@ -7,6 +7,131 @@ import {
   westNode,
   northNode,
 } from "../../graphs/decomposition_graph.js";
+
+vi.mock("ava-langchain-prompt-decomposition", async (importOriginal) => {
+  const actual = await importOriginal<
+    typeof import("ava-langchain-prompt-decomposition")
+  >();
+
+  return {
+    ...actual,
+    strategicDecompose: async (
+      prompt: string,
+      options?: { preferences?: { alwaysMultiPass?: boolean } }
+    ) => {
+      const directionalAnalysis = new actual.DirectionalDecomposer().decompose(prompt);
+      const intents = await new actual.IntentExtractor().extract(prompt);
+      const mapper = new actual.DependencyMapper();
+      const dependencyGraph = mapper.buildGraph(intents.secondary);
+      const executionOrder = mapper.computeExecutionOrder(dependencyGraph);
+      const decomposition = new actual.ActionStackBuilder().build(
+        directionalAnalysis,
+        intents,
+        executionOrder
+      );
+      const wheelEnriched = new actual.MedicineWheelBridge().enrich(
+        directionalAnalysis
+      );
+      const strategyResult = {
+        strategyId: "keyword",
+        directionalAnalysis,
+        intents,
+        decomposition,
+        wheelEnriched,
+        confidence: 0.82,
+        directionConfidence: {
+          east: 0.8,
+          south: 0.75,
+          west: 0.7,
+          north: 0.85,
+        },
+        executionTimeMs: 4,
+        diagnostics: ["Calibrated: test fixture"],
+      };
+
+      return {
+        result: strategyResult,
+        selectionReason: "Selected keyword strategy for deterministic execution",
+        signals: {
+          wordCount: prompt.split(/\s+/).length,
+          clauseCount: 2,
+          conditionalCount: 0,
+          hedgingCount: 0,
+          actionVerbCount: 3,
+          directionalSpread: 3,
+          hasTechnicalReferences: false,
+          hasNestedStructure: false,
+          complexity: "moderate",
+        },
+        multiPass: options?.preferences?.alwaysMultiPass
+          ? {
+              best: strategyResult,
+              allResults: [strategyResult, { ...strategyResult, strategyId: "hybrid" }],
+              failures: [],
+              signals: {},
+              disagreements: [
+                {
+                  aspect: "lead_direction",
+                  description: "Strategies selected different lead directions",
+                  strategyValues: { keyword: "north", hybrid: "west" },
+                  severity: "moderate",
+                },
+              ],
+              totalExecutionTimeMs: 8,
+            }
+          : undefined,
+      };
+    },
+    extractStrategyMetadata: (strategic: {
+      result: {
+        strategyId: string;
+        decomposition: { timestamp: string };
+        confidence: number;
+        directionConfidence: Record<string, number>;
+        diagnostics: string[];
+        executionTimeMs: number;
+      };
+      selectionReason: string;
+      signals: Record<string, unknown> & { complexity: string };
+      multiPass?: {
+        allResults: unknown[];
+        disagreements: unknown[];
+        failures: unknown[];
+        totalExecutionTimeMs: number;
+      };
+    }) => ({
+      schemaVersion: 1,
+      strategyId: strategic.result.strategyId,
+      selectionReason: strategic.selectionReason,
+      complexity: {
+        level: strategic.signals.complexity,
+        wordCount: strategic.signals.wordCount,
+        clauseCount: strategic.signals.clauseCount,
+        conditionalCount: strategic.signals.conditionalCount,
+        hedgingCount: strategic.signals.hedgingCount,
+        actionVerbCount: strategic.signals.actionVerbCount,
+        directionalSpread: strategic.signals.directionalSpread,
+        hasTechnicalReferences: strategic.signals.hasTechnicalReferences,
+        hasNestedStructure: strategic.signals.hasNestedStructure,
+      },
+      confidence: {
+        overall: strategic.result.confidence,
+        perDirection: strategic.result.directionConfidence,
+      },
+      diagnostics: strategic.result.diagnostics,
+      executionTimeMs: strategic.result.executionTimeMs,
+      multiPass: strategic.multiPass
+        ? {
+            totalPasses: strategic.multiPass.allResults.length,
+            totalExecutionTimeMs: strategic.multiPass.totalExecutionTimeMs,
+            disagreements: strategic.multiPass.disagreements,
+            failures: strategic.multiPass.failures,
+          }
+        : undefined,
+      timestamp: strategic.result.decomposition.timestamp,
+    }),
+  };
+});
 
 describe("DecompositionGraph", () => {
   describe("individual nodes", () => {
@@ -69,6 +194,8 @@ describe("DecompositionGraph", () => {
       expect(state.intentResult).toBeDefined();
       expect(state.decomposition).toBeDefined();
       expect(state.decomposition!.actionStack.length).toBeGreaterThan(0);
+      expect(state.strategyMetadata).toBeNull();
+      expect(state.decompositionWithProvenance).toBeNull();
     });
 
     it("should detect ceremony requirements", async () => {
@@ -82,7 +209,7 @@ describe("DecompositionGraph", () => {
     });
 
     it("should halt at ceremony when enforced", async () => {
-      const graph = new DecompositionGraph({ enforeCeremony: true });
+      const graph = new DecompositionGraph({ enforceCeremony: true });
       const state = await graph.invoke(
         "Build code. Ship immediately. Deploy now. Execute."
       );
@@ -94,10 +221,49 @@ describe("DecompositionGraph", () => {
       }
     });
 
+    it("should still accept the legacy enforeCeremony option", async () => {
+      const graph = new DecompositionGraph({ enforeCeremony: true });
+      const state = await graph.invoke(
+        "Build code. Ship immediately. Deploy now. Execute."
+      );
+
+      if (state.ceremonyRequired) {
+        expect(state.status).toBe("ceremony_hold");
+      }
+    });
+
     it("should produce results with session ID", async () => {
       const graph = new DecompositionGraph();
       const state = await graph.invoke("Research and build.", "session-123");
       expect(state.sessionId).toBe("session-123");
+    });
+
+    it("should expose strategic provenance for downstream engines", async () => {
+      const graph = new DecompositionGraph({
+        strategy: {
+          enabled: true,
+          preferences: { alwaysMultiPass: true },
+        },
+      });
+      const state = await graph.invoke(
+        "Research the architecture, build the module, and validate the result."
+      );
+
+      expect(state.status).toBe("complete");
+      expect(state.decomposition).toBeDefined();
+      expect(state.strategyMetadata).toEqual(
+        expect.objectContaining({
+          schemaVersion: 1,
+          strategyId: "keyword",
+          selectionReason: expect.any(String),
+        })
+      );
+      expect(state.strategyMetadata?.multiPass?.disagreements).toHaveLength(1);
+      expect(state.decompositionWithProvenance).toEqual({
+        decomposition: state.decomposition,
+        metadata: state.strategyMetadata,
+        wheelEnriched: state.wheelEnriched,
+      });
     });
   });
 });
