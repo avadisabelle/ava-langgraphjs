@@ -1,0 +1,1 @@
+geminiiyolo "review the points of branch 'codex/issue-11-strategy-aware-engines', I guess, hahaha, on 'Speech Act Theory Introduction' (but maybe more because we are talking of having engines in the EchoNexus that are Aware', but aware of what ?)  and present aspects of the academic field that supports the proposed enhancements as Mia/Miette's perspective"
