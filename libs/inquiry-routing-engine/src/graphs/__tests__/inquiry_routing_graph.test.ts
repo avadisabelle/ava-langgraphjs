@@ -6,8 +6,53 @@ import {
   routeNode,
   validateNode,
   dispatchNode,
+  type StrategyMetadata,
 } from "../../graphs/inquiry_routing_graph.js";
 import { decompose } from "ava-langchain-prompt-decomposition";
+
+function createStrategyMetadata(timestamp: string): StrategyMetadata {
+  return {
+    schemaVersion: 1,
+    strategyId: "hybrid",
+    selectionReason: "Selected hybrid strategy for an ambiguous prompt",
+    complexity: {
+      level: "ambiguous",
+      wordCount: 42,
+      clauseCount: 4,
+      conditionalCount: 1,
+      hedgingCount: 2,
+      actionVerbCount: 4,
+      directionalSpread: 4,
+      hasTechnicalReferences: true,
+      hasNestedStructure: true,
+    },
+    confidence: {
+      overall: 0.84,
+      perDirection: {
+        east: 0.8,
+        south: 0.76,
+        west: 0.82,
+        north: 0.88,
+      },
+    },
+    diagnostics: ["Cross-strategy calibration applied"],
+    executionTimeMs: 18,
+    multiPass: {
+      totalPasses: 2,
+      totalExecutionTimeMs: 22,
+      disagreements: [
+        {
+          aspect: "lead_direction",
+          description: "Keyword selected north while hybrid selected west",
+          strategyValues: { keyword: "north", hybrid: "west" },
+          severity: "moderate",
+        },
+      ],
+      failures: [],
+    },
+    timestamp,
+  };
+}
 
 describe("InquiryRoutingGraph", () => {
   describe("individual nodes", () => {
@@ -21,6 +66,26 @@ describe("InquiryRoutingGraph", () => {
       expect(result.inquiryBatch).toBeDefined();
       expect(result.inquiryBatch!.total).toBeGreaterThan(0);
       expect(result.status).toBe("generated");
+    });
+
+    it("should turn strategy disagreements into WEST validation inquiries", async () => {
+      const { decomposition } = await decompose(
+        "Research the architecture. Build the API. Validate the integration.",
+      );
+      const legacy = generateNode(createInitialState(decomposition));
+      const state = createInitialState({
+        decomposition,
+        metadata: createStrategyMetadata(decomposition.timestamp),
+      });
+      const result = generateNode(state);
+
+      expect(state.strategyMetadata?.strategyId).toBe("hybrid");
+      expect(result.inquiryBatch!.total).toBe(legacy.inquiryBatch!.total + 1);
+      expect(
+        result.inquiryBatch!.west.some((inquiry) =>
+          inquiry.query.includes("lead_direction"),
+        ),
+      ).toBe(true);
     });
 
     it("routeNode should classify inquiries to source channels", async () => {
@@ -145,6 +210,23 @@ describe("InquiryRoutingGraph", () => {
       const state = await graph.invoke(decomposition);
 
       expect(state.pdeId).toBe(decomposition.id);
+    });
+
+    it("should preserve strategy provenance through the routing pipeline", async () => {
+      const graph = new InquiryRoutingGraph();
+      const { decomposition } = await decompose(
+        "Research the strategy. Build the module. Validate the result.",
+      );
+      const metadata = createStrategyMetadata(decomposition.timestamp);
+      const state = await graph.invoke({ decomposition, metadata });
+
+      expect(state.status).toBe("dispatched");
+      expect(state.strategyMetadata).toEqual(metadata);
+      expect(
+        state.dispatchedInquiries?.some((inquiry) =>
+          inquiry.query.includes("lead_direction"),
+        ),
+      ).toBe(true);
     });
   });
 });

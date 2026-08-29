@@ -39,6 +39,7 @@ interface StoredDecomposition {
   parent_pde_id?: string;
   child_kind?: ChildKind;
   fallback?: PdeFallbackMetadata;
+  provenance?: Record<string, unknown>;
   folder_name?: string;
   pde_dir?: string;
   markdownPath?: string;
@@ -90,7 +91,104 @@ export interface DecompositionGraphStorageOptions {
   fallback?: PdeFallbackMetadata;
 }
 
+export interface StrategyMetadata {
+  schemaVersion: number;
+  strategyId: string;
+  selectionReason: string;
+  complexity: {
+    level: "simple" | "moderate" | "complex" | "ambiguous";
+    wordCount: number;
+    clauseCount: number;
+    conditionalCount: number;
+    hedgingCount: number;
+    actionVerbCount: number;
+    directionalSpread: number;
+    hasTechnicalReferences: boolean;
+    hasNestedStructure: boolean;
+  };
+  confidence: {
+    overall: number;
+    perDirection: Record<string, number>;
+  };
+  diagnostics: string[];
+  executionTimeMs: number;
+  multiPass?: {
+    totalPasses: number;
+    totalExecutionTimeMs: number;
+    disagreements: Array<{
+      aspect: string;
+      description: string;
+      strategyValues: Record<string, string>;
+      severity: "low" | "moderate" | "high";
+    }>;
+    failures: Array<{ strategyId: string; error: string }>;
+  };
+  timestamp: string;
+}
+
+export interface DecompositionWithProvenance {
+  decomposition: DecompositionResult;
+  metadata: StrategyMetadata;
+  wheelEnriched?: WheelEnrichedAnalysis;
+}
+
+export interface DecompositionGraphStrategyOptions {
+  /** Strategy mode is additive and disabled by default. */
+  enabled?: boolean;
+  resources?: {
+    llm?: unknown;
+    embeddings?: unknown;
+    maxLatencyMs?: number;
+    preferAccuracy?: boolean;
+  };
+  preferences?: {
+    forceStrategy?: string;
+    minConfidence?: number;
+    alwaysMultiPass?: boolean;
+    maxPasses?: number;
+    excludeStrategies?: string[];
+  };
+  /** Custom upstream strategies, when provided by the chain package. */
+  strategies?: unknown[];
+}
+
+interface StrategicDecompositionResult {
+  result: {
+    strategyId: string;
+    directionalAnalysis: DirectionalAnalysis;
+    intents: IntentExtractionResult;
+    decomposition: DecompositionResult;
+    wheelEnriched: WheelEnrichedAnalysis;
+    confidence: number;
+    directionConfidence: Record<string, number>;
+    executionTimeMs: number;
+    diagnostics: string[];
+  };
+  selectionReason: string;
+  signals: Omit<StrategyMetadata["complexity"], "level"> & {
+    complexity: StrategyMetadata["complexity"]["level"];
+  };
+  multiPass?: {
+    allResults: unknown[];
+    totalExecutionTimeMs: number;
+    disagreements: NonNullable<StrategyMetadata["multiPass"]>["disagreements"];
+    failures: NonNullable<StrategyMetadata["multiPass"]>["failures"];
+  };
+}
+
 interface PromptDecompositionStorageModule {
+  strategicDecompose?: (
+    prompt: string,
+    options?: Omit<DecompositionGraphStrategyOptions, "enabled">
+  ) => Promise<StrategicDecompositionResult>;
+  extractStrategyMetadata?: (
+    result: StrategicDecompositionResult
+  ) => StrategyMetadata;
+  saveStrategicDecomposition?: (
+    workdir: string,
+    result: StrategicDecompositionResult,
+    options?: DecompositionGraphStorageOptions
+  ) => StoredDecomposition;
   saveDecomposition?: (
     workdir: string,
     decomposition: DecompositionResult,
@@ -133,6 +231,12 @@ export interface DecompositionState {
   /** NORTH: Final decomposition result */
   decomposition: DecompositionResult | null;
 
+  /** Strategy provenance when strategy mode is enabled */
+  strategyMetadata: StrategyMetadata | null;
+
+  /** Stable downstream handoff for inquiry routing and persistence */
+  decompositionWithProvenance: DecompositionWithProvenance | null;
+
   /** Storage: Persisted decomposition (if workdir provided) */
   stored: StoredDecomposition | null;
 
@@ -155,6 +259,8 @@ export function createInitialState(prompt: string, sessionId?: string): Decompos
     ceremonyRequired: false,
     relationalGuidance: [],
     decomposition: null,
+    strategyMetadata: null,
+    decompositionWithProvenance: null,
     stored: null,
     status: "pending",
     errors: [],
@@ -297,6 +403,8 @@ export interface DecompositionGraphOptions {
   workdir?: string;
   /** Optional storage lineage metadata passed to ava-langchain-prompt-decomposition. */
   storage?: DecompositionGraphStorageOptions;
+  /** Optional strategy-aware decomposition. Legacy graph execution remains the default. */
+  strategy?: DecompositionGraphStrategyOptions;
 }
 
 /**
@@ -310,17 +418,23 @@ export class DecompositionGraph {
   private readonly enforceCeremony: boolean;
   private readonly workdir?: string;
   private readonly storage?: DecompositionGraphStorageOptions;
+  private readonly strategy?: DecompositionGraphStrategyOptions;
 
   constructor(options?: DecompositionGraphOptions) {
     this.enforceCeremony = options?.enforceCeremony ?? options?.enforeCeremony ?? false;
     this.workdir = options?.workdir;
     this.storage = options?.storage;
+    this.strategy = options?.strategy;
   }
 
   /**
    * Run the full decomposition pipeline.
    */
   async invoke(prompt: string, sessionId?: string): Promise<DecompositionState> {
+    if (this.strategy?.enabled) {
+      return this.invokeStrategic(prompt, sessionId);
+    }
+
     let state = createInitialState(prompt, sessionId);
 
     // EAST: Vision
@@ -340,34 +454,7 @@ export class DecompositionGraph {
     // NORTH: Action
     state = this.mergeState(state, northNode(state));
 
-    // STORAGE: Persist to .pde/ if workdir is configured
-    if (this.workdir && state.decomposition) {
-      try {
-        // Dynamic import keeps older chain package builds usable.
-        const pdeModule = (await import(
-          "ava-langchain-prompt-decomposition"
-        )) as PromptDecompositionStorageModule;
-        if (typeof pdeModule.saveDecomposition === "function") {
-          const storageOptions: DecompositionGraphStorageOptions = {
-            ...this.storage,
-            sessionId: this.storage?.sessionId ?? state.sessionId,
-            sessionIdSource: this.storage?.sessionIdSource ?? "manual",
-          };
-          const stored = pdeModule.saveDecomposition(
-            this.workdir,
-            state.decomposition,
-            storageOptions
-          );
-          state = this.mergeState(state, { stored });
-        }
-      } catch (e) {
-        state = this.mergeState(state, {
-          errors: [...state.errors, `STORAGE: ${(e as Error).message}`],
-        });
-      }
-    }
-
-    return state;
+    return this.persistState(state);
   }
 
   /**
@@ -399,6 +486,158 @@ export class DecompositionGraph {
 
   async invokeNorth(state: DecompositionState): Promise<DecompositionState> {
     return this.mergeState(state, northNode(state));
+  }
+
+  private async invokeStrategic(
+    prompt: string,
+    sessionId?: string
+  ): Promise<DecompositionState> {
+    let state = createInitialState(prompt, sessionId);
+
+    try {
+      const pdeModule = (await import(
+        "ava-langchain-prompt-decomposition"
+      )) as PromptDecompositionStorageModule;
+      if (typeof pdeModule.strategicDecompose !== "function") {
+        throw new Error(
+          "Strategy mode requires ava-langchain-prompt-decomposition with strategicDecompose()"
+        );
+      }
+
+      const strategic = await pdeModule.strategicDecompose(prompt, {
+        resources: this.strategy?.resources,
+        preferences: this.strategy?.preferences,
+        strategies: this.strategy?.strategies,
+      });
+      const metadata =
+        pdeModule.extractStrategyMetadata?.(strategic) ??
+        this.extractStrategyMetadata(strategic);
+      const mapper = new DependencyMapper();
+      const dependencyGraph = mapper.buildGraph(strategic.result.intents.secondary);
+      const executionOrder = mapper.computeExecutionOrder(dependencyGraph);
+      const bridge = new MedicineWheelBridge();
+      const ceremonyRequired = strategic.result.wheelEnriched.ceremonyRequired;
+
+      state = this.mergeState(state, {
+        directionalAnalysis: strategic.result.directionalAnalysis,
+        intentResult: strategic.result.intents,
+        dependencyGraph,
+        executionOrder,
+        wheelEnriched: strategic.result.wheelEnriched,
+        ceremonyRequired,
+        relationalGuidance: bridge.getRelationalGuidance(
+          strategic.result.directionalAnalysis
+        ),
+        strategyMetadata: metadata,
+        status:
+          ceremonyRequired && this.enforceCeremony
+            ? "ceremony_hold"
+            : "complete",
+      });
+
+      if (state.status === "ceremony_hold") {
+        return state;
+      }
+
+      const decompositionWithProvenance: DecompositionWithProvenance = {
+        decomposition: strategic.result.decomposition,
+        metadata,
+        wheelEnriched: strategic.result.wheelEnriched,
+      };
+      state = this.mergeState(state, {
+        decomposition: strategic.result.decomposition,
+        decompositionWithProvenance,
+      });
+
+      return this.persistState(state, strategic);
+    } catch (e) {
+      return this.mergeState(state, {
+        errors: [...state.errors, `STRATEGY: ${(e as Error).message}`],
+        status: "complete",
+      });
+    }
+  }
+
+  private async persistState(
+    state: DecompositionState,
+    strategic?: StrategicDecompositionResult
+  ): Promise<DecompositionState> {
+    if (!this.workdir || !state.decomposition) return state;
+
+    try {
+      const pdeModule = (await import(
+        "ava-langchain-prompt-decomposition"
+      )) as PromptDecompositionStorageModule;
+      const storageOptions: DecompositionGraphStorageOptions = {
+        ...this.storage,
+        provenance: {
+          ...(this.storage?.provenance ?? {}),
+          ...(state.strategyMetadata
+            ? { strategy: state.strategyMetadata }
+            : {}),
+        },
+        sessionId: this.storage?.sessionId ?? state.sessionId,
+        sessionIdSource: this.storage?.sessionIdSource ?? "manual",
+      };
+
+      const stored =
+        strategic && typeof pdeModule.saveStrategicDecomposition === "function"
+          ? pdeModule.saveStrategicDecomposition(
+              this.workdir,
+              strategic,
+              storageOptions
+            )
+          : pdeModule.saveDecomposition?.(
+              this.workdir,
+              state.decomposition,
+              storageOptions
+            );
+
+      return stored ? this.mergeState(state, { stored }) : state;
+    } catch (e) {
+      return this.mergeState(state, {
+        errors: [...state.errors, `STORAGE: ${(e as Error).message}`],
+      });
+    }
+  }
+
+  private extractStrategyMetadata(
+    result: StrategicDecompositionResult
+  ): StrategyMetadata {
+    return {
+      schemaVersion: 1,
+      strategyId: result.result.strategyId,
+      selectionReason: result.selectionReason,
+      complexity: {
+        level: result.signals.complexity,
+        wordCount: result.signals.wordCount,
+        clauseCount: result.signals.clauseCount,
+        conditionalCount: result.signals.conditionalCount,
+        hedgingCount: result.signals.hedgingCount,
+        actionVerbCount: result.signals.actionVerbCount,
+        directionalSpread: result.signals.directionalSpread,
+        hasTechnicalReferences: result.signals.hasTechnicalReferences,
+        hasNestedStructure: result.signals.hasNestedStructure,
+      },
+      confidence: {
+        overall: result.result.confidence,
+        perDirection: { ...result.result.directionConfidence },
+      },
+      diagnostics: [...result.result.diagnostics],
+      executionTimeMs: result.result.executionTimeMs,
+      multiPass: result.multiPass
+        ? {
+            totalPasses: result.multiPass.allResults.length,
+            totalExecutionTimeMs: result.multiPass.totalExecutionTimeMs,
+            disagreements: result.multiPass.disagreements.map((item) => ({
+              ...item,
+              strategyValues: { ...item.strategyValues },
+            })),
+            failures: result.multiPass.failures.map((item) => ({ ...item })),
+          }
+        : undefined,
+      timestamp: result.result.decomposition.timestamp,
+    };
   }
 
   private mergeState(

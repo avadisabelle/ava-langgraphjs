@@ -45,6 +45,9 @@ export const VERSION = "0.1.3";
 
 // Graphs
 export {
+  StrategyMetadata,
+  DecompositionWithProvenance,
+  InquiryRoutingInput,
   InquiryRoutingState,
   createInitialState,
   generateNode,

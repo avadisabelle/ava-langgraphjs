@@ -69,12 +69,18 @@ export async function createInquiryRoutingStateGraph(options?: StateGraphFactory
 
   const enforceCeremony = options?.enforceCeremony ?? false;
 
-  // State channel defaults. `any` in the Record type is required because
-  // LangGraph's channel API accepts heterogeneous default factories.
-  const channels: Record<string, { default: () => unknown }> = {
+  // State channel defaults include an optional reducer for accumulated arrays.
+  const channels: Record<
+    string,
+    {
+      default: () => unknown;
+      value?: (previous: string[], next: string[]) => string[];
+    }
+  > = {
     decomposition: { default: () => null },
     pdeId: { default: () => "" },
     sessionId: { default: () => "" },
+    strategyMetadata: { default: () => null },
     inquiryBatch: { default: () => null },
     routingDecisions: { default: () => null },
     routedBatch: { default: () => null },

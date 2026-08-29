@@ -24,6 +24,7 @@ import {
   InquiryGenerator,
   InquiryRouter,
   RelationalEnricher,
+  InquirySource,
   InquiryStatus,
   type Inquiry,
   type InquiryBatch,
@@ -44,6 +45,50 @@ import {
 // State
 // =============================================================================
 
+export interface StrategyMetadata {
+  schemaVersion: number;
+  strategyId: string;
+  selectionReason: string;
+  complexity: {
+    level: "simple" | "moderate" | "complex" | "ambiguous";
+    wordCount: number;
+    clauseCount: number;
+    conditionalCount: number;
+    hedgingCount: number;
+    actionVerbCount: number;
+    directionalSpread: number;
+    hasTechnicalReferences: boolean;
+    hasNestedStructure: boolean;
+  };
+  confidence: {
+    overall: number;
+    perDirection: Record<string, number>;
+  };
+  diagnostics: string[];
+  executionTimeMs: number;
+  multiPass?: {
+    totalPasses: number;
+    totalExecutionTimeMs: number;
+    disagreements: Array<{
+      aspect: string;
+      description: string;
+      strategyValues: Record<string, string>;
+      severity: "low" | "moderate" | "high";
+    }>;
+    failures: Array<{ strategyId: string; error: string }>;
+  };
+  timestamp: string;
+}
+
+export interface DecompositionWithProvenance {
+  decomposition: DecompositionResult;
+  metadata: StrategyMetadata;
+}
+
+export type InquiryRoutingInput =
+  | DecompositionResult
+  | DecompositionWithProvenance;
+
 export interface InquiryRoutingState {
   /** The decomposition result from PDE */
   decomposition: DecompositionResult;
@@ -53,6 +98,9 @@ export interface InquiryRoutingState {
 
   /** Session ID for tracking */
   sessionId: string;
+
+  /** Strategy provenance supplied by an upstream strategic decomposition */
+  strategyMetadata: StrategyMetadata | null;
 
   /** EAST: Generated inquiry batch */
   inquiryBatch: InquiryBatch | null;
@@ -83,13 +131,17 @@ export interface InquiryRoutingState {
 }
 
 export function createInitialState(
-  decomposition: DecompositionResult,
+  input: InquiryRoutingInput,
   sessionId?: string,
 ): InquiryRoutingState {
+  const enriched = isDecompositionWithProvenance(input);
+  const decomposition = enriched ? input.decomposition : input;
+
   return {
     decomposition,
     pdeId: decomposition.id,
     sessionId: sessionId ?? uuid(),
+    strategyMetadata: enriched ? input.metadata : null,
     inquiryBatch: null,
     routingDecisions: null,
     routedBatch: null,
@@ -113,7 +165,16 @@ export function createInitialState(
 export function generateNode(state: InquiryRoutingState): Partial<InquiryRoutingState> {
   try {
     const generator = new InquiryGenerator();
-    const inquiryBatch = generator.generate(state.decomposition);
+    const generated = generator.generate(state.decomposition);
+    const disagreementInquiries = createDisagreementInquiries(state);
+    const inquiryBatch =
+      disagreementInquiries.length > 0
+        ? {
+            ...generated,
+            west: [...generated.west, ...disagreementInquiries],
+            total: generated.total + disagreementInquiries.length,
+          }
+        : generated;
 
     return {
       inquiryBatch,
@@ -278,7 +339,7 @@ export class InquiryRoutingGraph {
    * Run the full inquiry routing pipeline.
    */
   async invoke(
-    decomposition: DecompositionResult,
+    decomposition: InquiryRoutingInput,
     sessionId?: string,
   ): Promise<InquiryRoutingState> {
     let state = createInitialState(decomposition, sessionId);
@@ -328,4 +389,41 @@ export class InquiryRoutingGraph {
   ): InquiryRoutingState {
     return { ...current, ...updates };
   }
+}
+
+function isDecompositionWithProvenance(
+  input: InquiryRoutingInput,
+): input is DecompositionWithProvenance {
+  return (
+    "decomposition" in input &&
+    "metadata" in input &&
+    typeof input.metadata === "object" &&
+    input.metadata !== null
+  );
+}
+
+function createDisagreementInquiries(
+  state: InquiryRoutingState,
+): Inquiry[] {
+  const disagreements = state.strategyMetadata?.multiPass?.disagreements ?? [];
+
+  return disagreements.map((disagreement) => ({
+    id: uuid(),
+    timestamp: new Date().toISOString(),
+    direction: "west",
+    source: InquirySource.QMD_LOCAL,
+    query: `Validate strategy disagreement "${disagreement.aspect}": ${disagreement.description}`,
+    status: InquiryStatus.PENDING,
+    relational_context:
+      "Cross-strategy disagreement from prompt decomposition provenance.",
+    accountability:
+      "Resolve or explicitly accept this disagreement before relying on the action plan.",
+    pde_id: state.pdeId,
+    confidence:
+      disagreement.severity === "high"
+        ? 0.95
+        : disagreement.severity === "moderate"
+          ? 0.8
+          : 0.65,
+  }));
 }

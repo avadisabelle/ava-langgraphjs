@@ -50,6 +50,9 @@ export {
   westNode,
   northNode,
   DecompositionGraphStorageOptions,
+  DecompositionGraphStrategyOptions,
+  StrategyMetadata,
+  DecompositionWithProvenance,
   DecompositionGraphOptions,
   DecompositionGraph,
   StateGraphFactoryOptions,
@@ -118,6 +121,7 @@ export interface StoredDecomposition {
   model?: string;
   parent_pde_id?: string;
   child_kind?: string;
+  provenance?: Record<string, unknown>;
   folder_name?: string;
   pde_dir?: string;
   markdownPath?: string;
