@@ -85,6 +85,52 @@ export type AnalysisCallback = (
   coherenceScore: number
 ) => void;
 
+/**
+ * A map of intent name -> the terms that signal it. Every universe's lexicon
+ * uses this shape, and every consumer can pass their own domain vocabulary in
+ * rather than forking the classifier.
+ */
+export type IntentKeywordMap = Record<string, string[]>;
+
+/**
+ * Confidence assigned when a universe finds NO supporting evidence. Kept equal
+ * across all three universes so an empty-evidence event does not silently tilt
+ * to whichever universe happened to have the highest fallback — the historical
+ * cause of plain engineering text landing in ceremony.
+ */
+export const NO_EVIDENCE_CONFIDENCE = 0.4;
+
+/**
+ * Default minimum confidence margin between the winning universe and the
+ * runner-up. Below this the lead is reported as `ambiguous` instead of asserted.
+ */
+export const DEFAULT_MIN_CONFIDENCE_MARGIN = 0.15;
+
+/**
+ * Score every intent against the content and record which terms actually fired.
+ * Returns per-intent scores (matches / lexicon size) plus the flat list of
+ * matched terms so a perspective can explain itself.
+ */
+function scoreIntents(
+  contentLower: string,
+  keywords: IntentKeywordMap
+): { intentScores: Record<string, number>; evidence: string[] } {
+  const intentScores: Record<string, number> = {};
+  const evidence: string[] = [];
+
+  for (const [intent, terms] of Object.entries(keywords)) {
+    const fired = terms.filter((term) =>
+      contentLower.includes(term.toLowerCase())
+    );
+    if (fired.length > 0) {
+      intentScores[intent] = fired.length / terms.length;
+      evidence.push(...fired);
+    }
+  }
+
+  return { intentScores, evidence };
+}
+
 // =============================================================================
 // Engineer World (Mia) - The Builder
 // =============================================================================
@@ -102,10 +148,30 @@ export function engineerIntentKeywords(): Record<string, string[]> {
       "create",
       "new",
     ],
-    bug_fix: ["fix:", "bug", "hotfix", "patch", "resolve", "correct"],
-    refactor: ["refactor", "refact:", "cleanup", "restructure", "reorganize"],
+    bug_fix: ["fix:", "bug", "hotfix", "patch", "resolve", "correct", "failing"],
+    refactor: [
+      "refactor",
+      "refact:",
+      "cleanup",
+      "restructure",
+      "reorganize",
+      "interface",
+      "contract",
+    ],
+    type_system: [
+      "schema",
+      "type",
+      "types",
+      "typing",
+      "compile",
+      "interface",
+      "contract",
+      "validate",
+      "spec",
+      "tangled",
+    ],
     documentation: ["docs:", "doc:", "documentation", "readme", "comment"],
-    testing: ["test:", "tests:", "testing", "spec", "coverage"],
+    testing: ["test:", "tests:", "testing", "spec", "coverage", "validate"],
     dependency: ["deps:", "dependency", "upgrade", "update", "bump"],
     configuration: ["config:", "configure", "settings", "env"],
     performance: ["perf:", "performance", "optimize", "speed", "cache"],
@@ -124,7 +190,8 @@ export function engineerIntentKeywords(): Record<string, string[]> {
  * - Flow routing for technical actions
  */
 export function analyzeEngineerPerspective(
-  state: ThreeUniverseState
+  state: ThreeUniverseState,
+  keywords: IntentKeywordMap = engineerIntentKeywords()
 ): ThreeUniverseState {
   const event = state.event;
   const eventType = state.eventType;
@@ -151,17 +218,7 @@ export function analyzeEngineerPerspective(
   const contentLower = content.toLowerCase();
 
   // Analyze intent based on keywords
-  const keywords = engineerIntentKeywords();
-  const intentScores: Record<string, number> = {};
-
-  for (const [intent, terms] of Object.entries(keywords)) {
-    const score = terms.filter((term) =>
-      contentLower.includes(term.toLowerCase())
-    ).length;
-    if (score > 0) {
-      intentScores[intent] = score / terms.length;
-    }
-  }
+  const { intentScores, evidence } = scoreIntents(contentLower, keywords);
 
   // Determine primary intent
   let intent: string;
@@ -174,7 +231,7 @@ export function analyzeEngineerPerspective(
     confidence = Math.min(0.95, 0.6 + intentScores[intent] * 0.4);
   } else {
     intent = "maintenance";
-    confidence = 0.5;
+    confidence = NO_EVIDENCE_CONFIDENCE;
   }
 
   // Map intents to suggested flows
@@ -186,6 +243,7 @@ export function analyzeEngineerPerspective(
     ],
     bug_fix: ["regression_test", "root_cause_analysis", "changelog_update"],
     refactor: ["architecture_review", "performance_test", "code_quality"],
+    type_system: ["type_check", "schema_validation", "contract_review"],
     documentation: ["doc_review", "example_validation"],
     testing: ["coverage_analysis", "test_quality_review"],
     dependency: ["security_scan", "compatibility_test"],
@@ -213,7 +271,7 @@ export function analyzeEngineerPerspective(
     Universe.ENGINEER,
     intent,
     confidence,
-    { suggestedFlows, context }
+    { suggestedFlows, context, evidence }
   );
 
   return { ...state, engineerPerspective: perspective };
@@ -314,7 +372,8 @@ export function ceremonyIntentKeywords(): Record<string, string[]> {
  * - Seven-generation awareness
  */
 export function analyzeCeremonyPerspective(
-  state: ThreeUniverseState
+  state: ThreeUniverseState,
+  keywords: IntentKeywordMap = ceremonyIntentKeywords()
 ): ThreeUniverseState {
   const event = state.event;
 
@@ -326,19 +385,13 @@ export function analyzeCeremonyPerspective(
   const contentLower = content.toLowerCase();
 
   // Analyze relational intent
-  const keywords = ceremonyIntentKeywords();
-  const intentScores: Record<string, number> = {};
+  const { intentScores, evidence } = scoreIntents(contentLower, keywords);
 
-  for (const [intent, terms] of Object.entries(keywords)) {
-    const score = terms.filter((term) => contentLower.includes(term)).length;
-    if (score > 0) {
-      intentScores[intent] = score / terms.length;
-    }
-  }
-
-  // Special case: multiple contributors = co_creation
+  // Special case: multiple contributors = co_creation (relational evidence, not
+  // a lexical term — recorded explicitly so the boost is explainable).
   if (contributors.length > 1) {
     intentScores.co_creation = (intentScores.co_creation || 0) + 0.5;
+    evidence.push("multiple-contributors");
   }
 
   // Determine primary intent
@@ -352,7 +405,7 @@ export function analyzeCeremonyPerspective(
     confidence = Math.min(0.95, 0.5 + intentScores[intent] * 0.4);
   } else {
     intent = "individual_offering";
-    confidence = 0.6;
+    confidence = NO_EVIDENCE_CONFIDENCE;
   }
 
   // Map intents to ceremonial flows
@@ -396,7 +449,7 @@ export function analyzeCeremonyPerspective(
     Universe.CEREMONY,
     intent,
     confidence,
-    { suggestedFlows, context }
+    { suggestedFlows, context, evidence }
   );
 
   return { ...state, ceremonyPerspective: perspective };
@@ -600,22 +653,15 @@ export function storyEngineIntentKeywords(): Record<string, string[]> {
  * - Character development
  */
 export function analyzeStoryEnginePerspective(
-  state: ThreeUniverseState
+  state: ThreeUniverseState,
+  keywords: IntentKeywordMap = storyEngineIntentKeywords()
 ): ThreeUniverseState {
   const event = state.event;
   const content = extractContent(event);
   const contentLower = content.toLowerCase();
 
   // Analyze narrative function
-  const keywords = storyEngineIntentKeywords();
-  const intentScores: Record<string, number> = {};
-
-  for (const [intent, terms] of Object.entries(keywords)) {
-    const score = terms.filter((term) => contentLower.includes(term)).length;
-    if (score > 0) {
-      intentScores[intent] = score / terms.length;
-    }
-  }
+  const { intentScores, evidence } = scoreIntents(contentLower, keywords);
 
   // Determine primary intent
   let intent: string;
@@ -628,7 +674,7 @@ export function analyzeStoryEnginePerspective(
     confidence = Math.min(0.95, 0.55 + intentScores[intent] * 0.4);
   } else {
     intent = "rising_action";
-    confidence = 0.5;
+    confidence = NO_EVIDENCE_CONFIDENCE;
   }
 
   // Map intent to act
@@ -692,7 +738,7 @@ export function analyzeStoryEnginePerspective(
     Universe.STORY_ENGINE,
     intent,
     confidence,
-    { suggestedFlows, context }
+    { suggestedFlows, context, evidence }
   );
 
   return { ...state, storyEnginePerspective: perspective };
@@ -795,7 +841,8 @@ function suggestPacing(intent: string, tension: number): string {
  * Combine all three universe perspectives into a unified analysis.
  */
 export function synthesizePerspectives(
-  state: ThreeUniverseState
+  state: ThreeUniverseState,
+  minConfidenceMargin: number = DEFAULT_MIN_CONFIDENCE_MARGIN
 ): ThreeUniverseState {
   const engineer = state.engineerPerspective;
   const ceremony = state.ceremonyPerspective;
@@ -814,13 +861,24 @@ export function synthesizePerspectives(
   // Calculate coherence
   const coherence = calculateCoherence(engineer, ceremony, storyEngine);
 
+  // How decisively was the lead won? A small margin between the two most
+  // confident universes means the winner is close to a coin-flip.
+  const sorted = [
+    engineer.confidence,
+    ceremony.confidence,
+    storyEngine.confidence,
+  ].sort((a, b) => b - a);
+  const leadMargin = Math.round((sorted[0] - sorted[1]) * 100) / 100;
+  const ambiguous = leadMargin < minConfidenceMargin;
+
   // Build the analysis
   const analysis = createThreeUniverseAnalysis(
     engineer,
     ceremony,
     storyEngine,
     lead,
-    coherence
+    coherence,
+    { leadMargin, ambiguous }
   );
 
   return {
@@ -954,11 +1012,51 @@ function calculateCoherence(
  * });
  * const result = processor.process(event);  // Automatically traced to Langfuse
  */
+/**
+ * Options for {@link ThreeUniverseProcessor}.
+ */
+export interface ThreeUniverseProcessorOptions {
+  tracingCallback?: AnalysisCallback;
+  /**
+   * Override any universe's lexicon. Merged over the built-in keywords, so you
+   * only supply the vocabulary that is specific to your domain. Pass a whole
+   * map to replace a universe's lexicon outright.
+   */
+  keywords?: {
+    engineer?: IntentKeywordMap;
+    ceremony?: IntentKeywordMap;
+    storyEngine?: IntentKeywordMap;
+  };
+  /**
+   * Confidence margin below which a lead is reported as `ambiguous`.
+   * Defaults to {@link DEFAULT_MIN_CONFIDENCE_MARGIN}.
+   */
+  minConfidenceMargin?: number;
+}
+
 export class ThreeUniverseProcessor {
   private tracingCallback?: AnalysisCallback;
+  private engineerKeywords: IntentKeywordMap;
+  private ceremonyKeywords: IntentKeywordMap;
+  private storyEngineKeywords: IntentKeywordMap;
+  private minConfidenceMargin: number;
 
-  constructor(options: { tracingCallback?: AnalysisCallback } = {}) {
+  constructor(options: ThreeUniverseProcessorOptions = {}) {
     this.tracingCallback = options.tracingCallback;
+    this.engineerKeywords = {
+      ...engineerIntentKeywords(),
+      ...(options.keywords?.engineer ?? {}),
+    };
+    this.ceremonyKeywords = {
+      ...ceremonyIntentKeywords(),
+      ...(options.keywords?.ceremony ?? {}),
+    };
+    this.storyEngineKeywords = {
+      ...storyEngineIntentKeywords(),
+      ...(options.keywords?.storyEngine ?? {}),
+    };
+    this.minConfidenceMargin =
+      options.minConfidenceMargin ?? DEFAULT_MIN_CONFIDENCE_MARGIN;
   }
 
   /**
@@ -979,10 +1077,10 @@ export class ThreeUniverseProcessor {
     };
 
     // Process through each universe
-    state = analyzeEngineerPerspective(state);
-    state = analyzeCeremonyPerspective(state);
-    state = analyzeStoryEnginePerspective(state);
-    state = synthesizePerspectives(state);
+    state = analyzeEngineerPerspective(state, this.engineerKeywords);
+    state = analyzeCeremonyPerspective(state, this.ceremonyKeywords);
+    state = analyzeStoryEnginePerspective(state, this.storyEngineKeywords);
+    state = synthesizePerspectives(state, this.minConfidenceMargin);
 
     // Check for errors
     if (state.error) {

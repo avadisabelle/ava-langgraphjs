@@ -145,8 +145,12 @@ describe("NarrativeCoherenceEngine", () => {
     const result = engine.analyze(beats, characters, themes);
 
     expect(result).toBeDefined();
-    expect(result.coherenceScore).toBeDefined();
-    expect(result.coherenceScore.overall).toBeGreaterThan(0);
+    // coherenceScore is a 0-1 number; the 0-100 detail is on coherenceBreakdown
+    expect(typeof result.coherenceScore).toBe("number");
+    expect(result.coherenceScore).toBeGreaterThanOrEqual(0);
+    expect(result.coherenceScore).toBeLessThanOrEqual(1);
+    expect(result.coherenceBreakdown.overall).toBeGreaterThan(0);
+    expect(result.tensions).toBeDefined();
     expect(result.gaps).toBeDefined();
     expect(result.trinityAssessment).toBeDefined();
   });
@@ -166,8 +170,8 @@ describe("NarrativeCoherenceEngine", () => {
 
     const result = engine.analyze(beats);
 
-    expect(result.coherenceScore.narrativeFlow.score).toBeLessThan(85);
-    expect(result.coherenceScore.narrativeFlow.issues.length).toBeGreaterThan(0);
+    expect(result.coherenceBreakdown.narrativeFlow.score).toBeLessThan(85);
+    expect(result.coherenceBreakdown.narrativeFlow.issues.length).toBeGreaterThan(0);
   });
 
   it("should detect missing climax", () => {
@@ -182,7 +186,7 @@ describe("NarrativeCoherenceEngine", () => {
 
     const result = engine.analyze(beats);
 
-    const pacingIssues = result.coherenceScore.pacing.issues;
+    const pacingIssues = result.coherenceBreakdown.pacing.issues;
     expect(pacingIssues.some((i) => i.includes("climax"))).toBe(true);
   });
 
@@ -204,7 +208,7 @@ describe("NarrativeCoherenceEngine", () => {
 
     const result = engine.analyze(beats, characters);
 
-    const charIssues = result.coherenceScore.characterConsistency.issues;
+    const charIssues = result.coherenceBreakdown.characterConsistency.issues;
     expect(charIssues.some((i) => i.includes("disappears"))).toBe(true);
   });
 
@@ -219,7 +223,7 @@ describe("NarrativeCoherenceEngine", () => {
 
     const result = engine.analyze(beats);
 
-    const continuityIssues = result.coherenceScore.continuity.issues;
+    const continuityIssues = result.coherenceBreakdown.continuity.issues;
     expect(continuityIssues.some((i) => i.includes("not in order"))).toBe(true);
   });
 
@@ -257,7 +261,7 @@ describe("NarrativeCoherenceEngine", () => {
     const result = engine.analyze([]);
 
     expect(result.coherenceScore).toBeDefined();
-    expect(result.coherenceScore.overall).toBeGreaterThan(0);
+    expect(result.coherenceBreakdown.overall).toBeGreaterThan(0);
   });
 
   it("should include metadata when requested", () => {

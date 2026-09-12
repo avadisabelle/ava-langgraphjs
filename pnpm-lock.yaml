@@ -139,11 +139,11 @@ importers:
         specifier: ^9.0.0
         version: 9.0.8
       ava-langchain-inquiry-routing:
-        specifier: ^0.1.0
-        version: 0.1.1(ava-langchain-prompt-decomposition@0.1.8(ava-langchain-relational-intelligence@0.1.3(@langchain/core@1.1.16(openai@6.16.0(ws@8.19.0)(zod@4.3.5))))(openai@6.16.0(ws@8.19.0)(zod@4.3.5)))
+        specifier: ^0.1.9
+        version: 0.1.9(ava-langchain-prompt-decomposition@0.1.9)
       ava-langchain-prompt-decomposition:
-        specifier: '>=0.1.8'
-        version: 0.1.8(ava-langchain-relational-intelligence@0.1.3(@langchain/core@1.1.16(openai@6.16.0(ws@8.19.0)(zod@4.3.5))))(openai@6.16.0(ws@8.19.0)(zod@4.3.5))
+        specifier: '>=0.1.9'
+        version: 0.1.9(ava-langchain-relational-intelligence@0.1.9)(openai@6.16.0(ws@8.19.0)(zod@4.3.5))
       eslint:
         specifier: ^8.0.0
         version: 8.57.1
@@ -194,11 +194,11 @@ importers:
         specifier: '>=0.2.0'
         version: 0.2.74(@langchain/core@1.1.16(openai@6.16.0(ws@8.19.0)(zod@4.3.5)))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(zod-to-json-schema@3.25.1(zod@4.3.5))
       ava-langchain-prompt-decomposition:
-        specifier: '>=0.1.8'
-        version: 0.1.8(ava-langchain-relational-intelligence@0.1.3(@langchain/core@1.1.16(openai@6.16.0(ws@8.19.0)(zod@4.3.5))))(openai@6.16.0(ws@8.19.0)(zod@4.3.5))
+        specifier: '>=0.1.9'
+        version: 0.1.9(ava-langchain-relational-intelligence@0.1.9)(openai@6.16.0(ws@8.19.0)(zod@4.3.5))
       ava-langchain-relational-intelligence:
-        specifier: '>=0.1.0'
-        version: 0.1.3(@langchain/core@1.1.16(openai@6.16.0(ws@8.19.0)(zod@4.3.5)))
+        specifier: '>=0.1.9'
+        version: 0.1.9(@langchain/core@1.1.16(openai@6.16.0(ws@8.19.0)(zod@4.3.5)))(ava-langchain-prompt-decomposition@0.1.9)
       ava-langgraph-narrative-intelligence:
         specifier: '>=0.1.0'
         version: 0.1.2(@langchain/langgraph@0.2.74(@langchain/core@1.1.16(openai@6.16.0(ws@8.19.0)(zod@4.3.5)))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(zod-to-json-schema@3.25.1(zod@4.3.5)))(ioredis@5.10.1)
@@ -1592,14 +1592,14 @@ packages:
   asynckit@0.4.0:
     resolution: {integrity: sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==}
 
-  ava-langchain-inquiry-routing@0.1.1:
-    resolution: {integrity: sha512-j0ZQB6B914e7RpG3AlvGR3a1hekyyUW9Ytn3GTu/pYcIjULTP6h7gRI1KYicHntJJ2+IJ6kr+/S+sjNII+NzmA==}
+  ava-langchain-inquiry-routing@0.1.9:
+    resolution: {integrity: sha512-LNKKPGunAx7mNIVy1mqlv9TxIPF9CNi1a3LNjf4KctxlCSSQYiljmOqUNc9Ka6AZqfHuwP0nrUeNohfyEPvdgQ==}
     engines: {node: '>=18'}
     peerDependencies:
       ava-langchain-prompt-decomposition: '>=0.1.0'
 
-  ava-langchain-prompt-decomposition@0.1.8:
-    resolution: {integrity: sha512-0ZDSiBjK/Q7Tt3nWuinhqVUAqgSohbFiuLyqR/sfiyNd2XHG/qWY6H2ONs3zgF6clPe8Vvlfbuz1bzdsul1T3Q==}
+  ava-langchain-prompt-decomposition@0.1.9:
+    resolution: {integrity: sha512-k8sw9SGW2s5H+RBZbnQw/MbNfhq7GY9OC4QittHEMm5gIO5uZgEToqD8qCgg2iTnSJqIMSdGPQ6zmTWVy7OPZw==}
     engines: {node: '>=20'}
     peerDependencies:
       ava-langchain-relational-intelligence: '>=0.1.0'
@@ -1607,15 +1607,14 @@ packages:
       ava-langchain-relational-intelligence:
         optional: true
 
-  ava-langchain-relational-intelligence@0.1.3:
-    resolution: {integrity: sha512-fHr4ne5WovpGq8U1TDyHuAV6v1pgh4i7EigF47LYnCvxvQBBbGyOM9FaEVngsJ4l2j03oWDAk+7Uoxt+r+t36g==}
+  ava-langchain-relational-intelligence@0.1.9:
+    resolution: {integrity: sha512-EK45WBVLFzIgrYhJ5w9UvbODNEslAXvCSfJtn2FLkPEjohlj4Yt3P/wGMI2G3KiOnxnVxaQq5Hw+3EsFP19wkw==}
     engines: {node: '>=18'}
     peerDependencies:
-      '@langchain/core': '>=0.2.0'
+      '@langchain/core': '>=0.1.0'
       ava-langchain-narrative-tracing: '>=0.1.0'
+      ava-langchain-prompt-decomposition: '>=0.1.0'
     peerDependenciesMeta:
-      '@langchain/core':
-        optional: true
       ava-langchain-narrative-tracing:
         optional: true
 
@@ -4695,30 +4694,30 @@ snapshots:
   asynckit@0.4.0:
     optional: true
 
-  ava-langchain-inquiry-routing@0.1.1(ava-langchain-prompt-decomposition@0.1.8(ava-langchain-relational-intelligence@0.1.3(@langchain/core@1.1.16(openai@6.16.0(ws@8.19.0)(zod@4.3.5))))(openai@6.16.0(ws@8.19.0)(zod@4.3.5))):
+  ava-langchain-inquiry-routing@0.1.9(ava-langchain-prompt-decomposition@0.1.9):
     dependencies:
-      ava-langchain-prompt-decomposition: 0.1.8(ava-langchain-relational-intelligence@0.1.3(@langchain/core@1.1.16(openai@6.16.0(ws@8.19.0)(zod@4.3.5))))(openai@6.16.0(ws@8.19.0)(zod@4.3.5))
+      ava-langchain-prompt-decomposition: 0.1.9(ava-langchain-relational-intelligence@0.1.9)(openai@6.16.0(ws@8.19.0)(zod@4.3.5))
       uuid: 9.0.1
 
-  ava-langchain-prompt-decomposition@0.1.8(ava-langchain-relational-intelligence@0.1.3(@langchain/core@1.1.16(openai@6.16.0(ws@8.19.0)(zod@4.3.5))))(openai@6.16.0(ws@8.19.0)(zod@4.3.5)):
+  ava-langchain-prompt-decomposition@0.1.9(ava-langchain-relational-intelligence@0.1.9)(openai@6.16.0(ws@8.19.0)(zod@4.3.5)):
     dependencies:
       '@langchain/core': 1.1.16(openai@6.16.0(ws@8.19.0)(zod@4.3.5))
       uuid: 9.0.1
       zod: 4.3.5
     optionalDependencies:
-      ava-langchain-relational-intelligence: 0.1.3(@langchain/core@1.1.16(openai@6.16.0(ws@8.19.0)(zod@4.3.5)))
+      ava-langchain-relational-intelligence: 0.1.9(@langchain/core@1.1.16(openai@6.16.0(ws@8.19.0)(zod@4.3.5)))(ava-langchain-prompt-decomposition@0.1.9)
     transitivePeerDependencies:
       - '@opentelemetry/api'
       - '@opentelemetry/exporter-trace-otlp-proto'
       - '@opentelemetry/sdk-trace-base'
       - openai
 
-  ava-langchain-relational-intelligence@0.1.3(@langchain/core@1.1.16(openai@6.16.0(ws@8.19.0)(zod@4.3.5))):
+  ava-langchain-relational-intelligence@0.1.9(@langchain/core@1.1.16(openai@6.16.0(ws@8.19.0)(zod@4.3.5)))(ava-langchain-prompt-decomposition@0.1.9):
     dependencies:
+      '@langchain/core': 1.1.16(openai@6.16.0(ws@8.19.0)(zod@4.3.5))
+      ava-langchain-prompt-decomposition: 0.1.9(ava-langchain-relational-intelligence@0.1.9)(openai@6.16.0(ws@8.19.0)(zod@4.3.5))
       uuid: 9.0.1
       zod: 4.3.5
-    optionalDependencies:
-      '@langchain/core': 1.1.16(openai@6.16.0(ws@8.19.0)(zod@4.3.5))
 
   ava-langgraph-narrative-intelligence@0.1.2(@langchain/langgraph@0.2.74(@langchain/core@1.1.16(openai@6.16.0(ws@8.19.0)(zod@4.3.5)))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(zod-to-json-schema@3.25.1(zod@4.3.5)))(ioredis@5.10.1):
     dependencies:

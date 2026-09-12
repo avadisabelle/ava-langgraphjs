@@ -28,6 +28,13 @@ export interface UniversePerspective {
   confidence: number;
   suggestedFlows: string[];
   context: Record<string, unknown>;
+  /**
+   * The terms that fired to produce this perspective's intent, in the order
+   * they were detected. Lets a consumer explain (and correct) a classification
+   * instead of trusting an opaque winner. Empty when the intent came from a
+   * no-evidence fallback.
+   */
+  evidence: string[];
 }
 
 /**
@@ -45,6 +52,7 @@ export function createUniversePerspective(
     confidence,
     suggestedFlows: options.suggestedFlows ?? [],
     context: options.context ?? {},
+    evidence: options.evidence ?? [],
   };
 }
 
@@ -58,6 +66,17 @@ export interface ThreeUniverseAnalysis {
   leadUniverse: Universe;
   coherenceScore: number;
   timestamp: string;
+  /**
+   * Confidence distance between the winning universe and the runner-up. A small
+   * margin means the lead is barely decided — see `ambiguous`.
+   */
+  leadMargin: number;
+  /**
+   * True when `leadMargin` falls below the processor's `minConfidenceMargin`.
+   * The winner is still reported for backward compatibility, but a near-coinflip
+   * (e.g. 0.5 vs 0.6) is flagged rather than asserted.
+   */
+  ambiguous: boolean;
 }
 
 /**
@@ -68,7 +87,8 @@ export function createThreeUniverseAnalysis(
   ceremony: UniversePerspective,
   storyEngine: UniversePerspective,
   leadUniverse: Universe,
-  coherenceScore: number
+  coherenceScore: number,
+  options: { leadMargin?: number; ambiguous?: boolean } = {}
 ): ThreeUniverseAnalysis {
   return {
     engineer,
@@ -77,6 +97,8 @@ export function createThreeUniverseAnalysis(
     leadUniverse,
     coherenceScore,
     timestamp: new Date().toISOString(),
+    leadMargin: options.leadMargin ?? 0,
+    ambiguous: options.ambiguous ?? false,
   };
 }
 

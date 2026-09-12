@@ -26,7 +26,8 @@
  * // Analyze narrative coherence
  * const engine = new NarrativeCoherenceEngine();
  * const result = engine.analyze(beats, characters, themes);
- * console.log(`Overall coherence: ${result.coherenceScore.overall}`);
+ * console.log(`Overall coherence: ${result.coherenceScore.toFixed(2)}`); // 0-1
+ * console.log(`Breakdown: ${result.coherenceBreakdown.overall}`); // 0-100
  */
 
 // ============================================================================
@@ -113,6 +114,10 @@ export {
   ProcessedEvent,
   ThreeUniverseState,
   AnalysisCallback,
+  IntentKeywordMap,
+  ThreeUniverseProcessorOptions,
+  NO_EVIDENCE_CONFIDENCE,
+  DEFAULT_MIN_CONFIDENCE_MARGIN,
   engineerIntentKeywords,
   ceremonyIntentKeywords,
   storyEngineIntentKeywords,
@@ -126,16 +131,19 @@ export {
 export {
   // Coherence Engine
   GapType,
+  TensionType,
   GapSeverity,
   RoutingTarget,
   ComponentStatus,
   Gap,
+  Tension,
   ComponentScore,
   CoherenceScore,
   TrinityAssessment,
   CoherenceEngineState,
   CoherenceResult,
   createGap,
+  createTension,
   createComponentScore,
   createCoherenceScore,
   createTrinityAssessment,
