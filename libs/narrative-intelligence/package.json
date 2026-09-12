@@ -47,7 +47,9 @@
     "lint:fix": "eslint src --fix",
     "test": "vitest run",
     "test:watch": "vitest",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "check:dts": "node ../../scripts/check-dts.mjs .",
+    "prepublishOnly": "tsup && node ../../scripts/check-dts.mjs ."
   },
   "repository": {
     "type": "git",
