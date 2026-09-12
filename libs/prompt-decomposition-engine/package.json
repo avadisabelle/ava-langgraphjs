@@ -58,11 +58,11 @@
   "author": "ava",
   "license": "MIT",
   "dependencies": {
-    "ava-langchain-prompt-decomposition": ">=0.1.10",
+    "ava-langchain-prompt-decomposition": ">=0.1.11",
     "uuid": "^10.0.0"
   },
   "peerDependencies": {
-    "ava-langchain-relational-intelligence": ">=0.1.10",
+    "ava-langchain-relational-intelligence": ">=0.1.11",
     "ava-langgraph-narrative-intelligence": ">=0.1.0",
     "@langchain/langgraph": "^1.4.15"
   },
