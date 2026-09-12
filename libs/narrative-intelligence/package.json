@@ -70,7 +70,7 @@
     "uuid": "^10.0.0"
   },
   "peerDependencies": {
-    "@langchain/langgraph": ">=0.2.0",
+    "@langchain/langgraph": "^1.4.15",
     "ioredis": ">=5.0.0"
   },
   "peerDependenciesMeta": {
@@ -82,7 +82,7 @@
     }
   },
   "devDependencies": {
-    "@langchain/langgraph": "^0.2.0",
+    "@langchain/langgraph": "^1.4.15",
     "@types/node": "^20.0.0",
     "@types/uuid": "^9.0.0",
     "eslint": "^8.0.0",

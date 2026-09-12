@@ -62,9 +62,9 @@
     "uuid": "^9.0.0"
   },
   "peerDependencies": {
-    "ava-langchain-prompt-decomposition": ">=0.1.9",
-    "ava-langchain-inquiry-routing": ">=0.1.9",
-    "@langchain/langgraph": ">=0.2.0"
+    "ava-langchain-prompt-decomposition": ">=0.1.10",
+    "ava-langchain-inquiry-routing": ">=0.1.10",
+    "@langchain/langgraph": "^1.4.15"
   },
   "peerDependenciesMeta": {
     "ava-langchain-prompt-decomposition": {
@@ -78,10 +78,12 @@
     }
   },
   "devDependencies": {
+    "@langchain/core": "^1.1.48",
+    "@langchain/langgraph": "^1.4.15",
     "@types/node": "^20.0.0",
     "@types/uuid": "^9.0.0",
-    "ava-langchain-prompt-decomposition": ">=0.1.9",
-    "ava-langchain-inquiry-routing": "^0.1.9",
+    "ava-langchain-prompt-decomposition": ">=0.1.10",
+    "ava-langchain-inquiry-routing": "^0.1.10",
     "eslint": "^8.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.3.0",

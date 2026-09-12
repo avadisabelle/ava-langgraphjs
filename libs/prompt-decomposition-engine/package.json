@@ -58,13 +58,13 @@
   "author": "ava",
   "license": "MIT",
   "dependencies": {
-    "ava-langchain-prompt-decomposition": ">=0.1.9",
+    "ava-langchain-prompt-decomposition": ">=0.1.10",
     "uuid": "^10.0.0"
   },
   "peerDependencies": {
-    "ava-langchain-relational-intelligence": ">=0.1.9",
+    "ava-langchain-relational-intelligence": ">=0.1.10",
     "ava-langgraph-narrative-intelligence": ">=0.1.0",
-    "@langchain/langgraph": ">=0.2.0"
+    "@langchain/langgraph": "^1.4.15"
   },
   "peerDependenciesMeta": {
     "ava-langgraph-narrative-intelligence": {
@@ -78,6 +78,8 @@
     }
   },
   "devDependencies": {
+    "@langchain/core": "^1.1.48",
+    "@langchain/langgraph": "^1.4.15",
     "@types/node": "^20.0.0",
     "@types/uuid": "^9.0.0",
     "eslint": "^8.0.0",
