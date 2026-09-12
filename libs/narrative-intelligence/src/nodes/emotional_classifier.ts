@@ -20,6 +20,11 @@ export enum EmotionalTone {
   PEACEFUL = "Peaceful",
   CONFLICTED = "Conflicted",
   RESIGNED = "Resigned",
+  /**
+   * No keyword matched. A detectable absence — distinct from confidently
+   * naming a tone. Consumers can branch on this instead of trusting a default.
+   */
+  UNKNOWN = "Unknown",
 }
 
 /**
@@ -50,7 +55,10 @@ export interface EmotionalClassificationState {
 /**
  * Keyword mappings for emotional tones.
  */
-export const TONE_KEYWORDS: Record<EmotionalTone, string[]> = {
+export const TONE_KEYWORDS: Record<
+  Exclude<EmotionalTone, EmotionalTone.UNKNOWN>,
+  string[]
+> = {
   [EmotionalTone.DEVASTATING]: ["destroy", "loss", "death", "tragedy", "grief", "devastat"],
   [EmotionalTone.HOPEFUL]: ["hope", "bright", "promise", "future", "optimis", "dream"],
   [EmotionalTone.TENSE]: ["tense", "anxious", "nervous", "edge", "suspense", "uncertain"],
@@ -133,6 +141,12 @@ export class EmotionalBeatClassifierNode {
     // For now, fall back to rule-based
     const ruleBasedResult = this.classifyRuleBased(storybeat);
 
+    // Do not inflate confidence for a result the rule-based path could not
+    // actually determine — a placeholder must not manufacture certainty.
+    if (ruleBasedResult.classification === EmotionalTone.UNKNOWN) {
+      return { ...ruleBasedResult, prompt };
+    }
+
     return {
       classification: ruleBasedResult.classification,
       confidence: 0.8,
@@ -205,11 +219,13 @@ Classification:`;
         method: "rule_based",
       };
     } else {
-      // Default to neutral/peaceful if no keywords match
+      // Nothing matched. Report the absence honestly rather than naming a tone
+      // the text never earned — a consumer can detect Unknown, but cannot detect
+      // a confident default.
       return {
-        classification: EmotionalTone.PEACEFUL,
-        confidence: 0.3,
-        method: "rule_based_default",
+        classification: EmotionalTone.UNKNOWN,
+        confidence: 0.0,
+        method: "no_match",
       };
     }
   }

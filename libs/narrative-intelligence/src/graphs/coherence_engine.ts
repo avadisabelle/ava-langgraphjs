@@ -20,6 +20,11 @@ import {
 /**
  * Types of narrative gaps that can be identified.
  */
+/**
+ * Kinds of structural tension between current reality and desired outcome.
+ * In a creative orientation this distance is the generative force, not a
+ * deficiency — hence `TensionType`, the forward name.
+ */
 export enum GapType {
   STRUCTURAL = "structural", // Missing beats, incomplete arcs
   THEMATIC = "thematic", // Promised themes underdelivered
@@ -27,6 +32,13 @@ export enum GapType {
   SENSORY = "sensory", // Scenes lacking grounding detail
   CONTINUITY = "continuity", // Timeline/detail inconsistencies
 }
+
+/**
+ * Forward name for {@link GapType}. Same values — a tension is the generative
+ * distance to close, not a hole to patch.
+ */
+export type TensionType = GapType;
+export const TensionType = GapType;
 
 /**
  * Severity levels for identified gaps.
@@ -53,11 +65,17 @@ export enum RoutingTarget {
 export type ComponentStatus = "good" | "warning" | "critical";
 
 /**
- * A narrative gap identified in the story.
+ * A structural tension identified in the story — the distance between what the
+ * narrative is and what it is reaching toward.
  */
-export interface Gap {
+export interface Tension {
   id: string;
-  gapType: GapType;
+  tensionType: TensionType;
+  /**
+   * @deprecated Use `tensionType`. Retained as an alias for one minor version;
+   * carries the same value.
+   */
+  gapType: TensionType;
   severity: GapSeverity;
   description: string;
   location: Record<string, unknown>; // beat_id, chapter_id, position
@@ -67,19 +85,26 @@ export interface Gap {
 }
 
 /**
- * Create a Gap with defaults
+ * @deprecated Use {@link Tension}. Backward-compatible alias.
  */
-export function createGap(
+export type Gap = Tension;
+
+/**
+ * Create a Tension with defaults. Populates both `tensionType` and the
+ * deprecated `gapType` alias with the same value.
+ */
+export function createTension(
   id: string,
-  gapType: GapType,
+  tensionType: TensionType,
   severity: GapSeverity,
   description: string,
   suggestedRoute: RoutingTarget,
-  options: Partial<Gap> = {}
-): Gap {
+  options: Partial<Tension> = {}
+): Tension {
   return {
     id,
-    gapType,
+    tensionType,
+    gapType: tensionType,
     severity,
     description,
     location: options.location ?? {},
@@ -87,6 +112,27 @@ export function createGap(
     resolved: options.resolved ?? false,
     resolution: options.resolution,
   };
+}
+
+/**
+ * @deprecated Use {@link createTension}. Backward-compatible alias.
+ */
+export function createGap(
+  id: string,
+  gapType: GapType,
+  severity: GapSeverity,
+  description: string,
+  suggestedRoute: RoutingTarget,
+  options: Partial<Tension> = {}
+): Tension {
+  return createTension(
+    id,
+    gapType,
+    severity,
+    description,
+    suggestedRoute,
+    options
+  );
 }
 
 /**
@@ -198,8 +244,23 @@ export interface CoherenceEngineState {
  * Result of coherence analysis.
  */
 export interface CoherenceResult {
-  coherenceScore: CoherenceScore;
-  gaps: Gap[];
+  /**
+   * Overall narrative coherence as a single comparable number in the range
+   * 0-1. Safe to format (`.toFixed`) or compare numerically. For the component
+   * breakdown and the 0-100 scores, see `coherenceBreakdown`.
+   */
+  coherenceScore: number;
+  /**
+   * Full coherence breakdown: the 0-100 `overall` plus every per-component
+   * score (narrative flow, character consistency, pacing, theme, continuity).
+   */
+  coherenceBreakdown: CoherenceScore;
+  tensions: Tension[];
+  /**
+   * @deprecated Use `tensions`. Retained as an alias for one minor version;
+   * references the same array of items.
+   */
+  gaps: Tension[];
   trinityAssessment: TrinityAssessment;
 }
 
@@ -216,12 +277,14 @@ export interface CoherenceResult {
  * const engine = new NarrativeCoherenceEngine();
  * const result = engine.analyze(beats, characters, themes);
  *
- * // Access scores
- * console.log(`Overall coherence: ${result.coherenceScore.overall}`);
+ * // Overall coherence as a 0-1 number
+ * console.log(`Overall coherence: ${result.coherenceScore.toFixed(2)}`);
+ * // Component breakdown (0-100 scores)
+ * console.log(`Flow: ${result.coherenceBreakdown.narrativeFlow.score}`);
  *
- * // Access gaps
- * for (const gap of result.gaps) {
- *   console.log(`Gap: ${gap.description} (${gap.severity})`);
+ * // Access tensions (gaps is a deprecated alias)
+ * for (const tension of result.tensions) {
+ *   console.log(`Tension: ${tension.description} (${tension.severity})`);
  * }
  *
  * // Access Trinity assessment
@@ -961,28 +1024,15 @@ export class NarrativeCoherenceEngine {
   }
 
   /**
-   * Analyze narrative coherence.
-   *
-   * @param beats List of story beats to analyze
-   * @param characters Optional list of character states
-   * @param themes Optional list of thematic threads
-   * @param includeMetadata Whether to include full analysis state
-   * @returns CoherenceResult with coherenceScore, gaps, and trinityAssessment
+   * Run the full analysis pipeline and return the raw engine state.
    */
-  analyze(
+  private runPipeline(
     beats: StoryBeat[],
-    characters: CharacterState[] = [],
-    themes: ThematicThread[] = [],
-    includeMetadata: boolean = false
-  ): CoherenceResult | CoherenceEngineState {
-    // Initialize state
-    let state: CoherenceEngineState = {
-      beats,
-      characters,
-      themes,
-    };
+    characters: CharacterState[],
+    themes: ThematicThread[]
+  ): CoherenceEngineState {
+    let state: CoherenceEngineState = { beats, characters, themes };
 
-    // Run analysis pipeline
     state = this.analyzeNarrativeFlow(state);
     state = this.analyzeCharacterConsistency(state);
     state = this.analyzePacing(state);
@@ -993,15 +1043,80 @@ export class NarrativeCoherenceEngine {
     state = this.generateTrinityAssessment(state);
     state = this.buildCoherenceResult(state);
 
+    return state;
+  }
+
+  /**
+   * Analyze narrative coherence.
+   *
+   * Returns a stable {@link CoherenceResult} — callers no longer need an
+   * `'coherenceScore' in result` guard. For the full internal state, use
+   * {@link NarrativeCoherenceEngine.analyzeWithState}.
+   *
+   * @param beats List of story beats to analyze
+   * @param characters Optional list of character states
+   * @param themes Optional list of thematic threads
+   * @returns CoherenceResult whose `coherenceScore` is a 0-1 number, with the
+   *   0-100 breakdown on `coherenceBreakdown`, plus tensions and trinityAssessment
+   */
+  analyze(
+    beats: StoryBeat[],
+    characters?: CharacterState[],
+    themes?: ThematicThread[]
+  ): CoherenceResult;
+  /**
+   * @deprecated Pass no `includeMetadata` and use {@link analyzeWithState} for
+   * the full state. This overload preserves the historical boolean switch.
+   */
+  analyze(
+    beats: StoryBeat[],
+    characters: CharacterState[],
+    themes: ThematicThread[],
+    includeMetadata: true
+  ): CoherenceEngineState;
+  analyze(
+    beats: StoryBeat[],
+    characters: CharacterState[],
+    themes: ThematicThread[],
+    includeMetadata: false
+  ): CoherenceResult;
+  analyze(
+    beats: StoryBeat[],
+    characters: CharacterState[] = [],
+    themes: ThematicThread[] = [],
+    includeMetadata: boolean = false
+  ): CoherenceResult | CoherenceEngineState {
+    const state = this.runPipeline(beats, characters, themes);
+
     if (includeMetadata) {
       return state;
-    } else {
-      return {
-        coherenceScore: state.coherenceScore!,
-        gaps: state.gaps || [],
-        trinityAssessment: state.trinityAssessment!,
-      };
     }
+
+    const tensions = state.gaps || [];
+    const breakdown = state.coherenceScore!;
+    return {
+      // Normalize the 0-100 overall to a 0-1 number — the historical, easily
+      // comparable contract. The 0-100 detail lives on `coherenceBreakdown`.
+      coherenceScore: Math.round((breakdown.overall / 100) * 10000) / 10000,
+      coherenceBreakdown: breakdown,
+      tensions,
+      gaps: tensions,
+      trinityAssessment: state.trinityAssessment!,
+    };
+  }
+
+  /**
+   * Analyze narrative coherence and return the full internal engine state
+   * (component scores, tensions, trinity assessment, and the assembled
+   * coherence score). The forward-named replacement for
+   * `analyze(..., includeMetadata: true)`.
+   */
+  analyzeWithState(
+    beats: StoryBeat[],
+    characters: CharacterState[] = [],
+    themes: ThematicThread[] = []
+  ): CoherenceEngineState {
+    return this.runPipeline(beats, characters, themes);
   }
 
   /**

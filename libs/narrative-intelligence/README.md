@@ -77,17 +77,18 @@ const beats = [
 
 const result = engine.analyze(beats);
 
-// Overall coherence score
-console.log(`Overall: ${result.coherenceScore.overall}%`);
+// Overall coherence score (0-1)
+console.log(`Overall: ${result.coherenceScore.toFixed(2)}`);
 
-// Component scores
-console.log(`Narrative Flow: ${result.coherenceScore.narrativeFlow.score}%`);
-console.log(`Pacing: ${result.coherenceScore.pacing.score}%`);
+// Component scores (0-100)
+console.log(`Overall: ${result.coherenceBreakdown.overall}%`);
+console.log(`Narrative Flow: ${result.coherenceBreakdown.narrativeFlow.score}%`);
+console.log(`Pacing: ${result.coherenceBreakdown.pacing.score}%`);
 
-// Identified gaps
-for (const gap of result.gaps) {
-  console.log(`Gap: ${gap.description} (${gap.severity})`);
-  console.log(`Route to: ${gap.suggestedRoute}`);
+// Identified tensions (`gaps` is a deprecated alias)
+for (const tension of result.tensions) {
+  console.log(`Tension: ${tension.description} (${tension.severity})`);
+  console.log(`Route to: ${tension.suggestedRoute}`);
 }
 
 // Trinity assessment (Mia/Miette/Ava8)
