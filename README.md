@@ -1,5 +1,5 @@
 > [!IMPORTANT]
-> **🌿 AvaLangGraph moved home to [avadisabelle/avalangstack](https://github.com/avadisabelle/avalangstack).** The three `ava-langgraph-*` engines below now live beside the chain primitives they compose, under [`@avalangstack/`](https://github.com/avadisabelle/avalangstack/tree/main/@avalangstack), and they keep publishing under the same npm names. This repository is archived: come here for history, build in the new home.
+> **🌿 AvaLangGraph moved home to [avadisabelle/avalangstack](https://github.com/avadisabelle/avalangstack).** The three `ava-langgraph-*` engines below now live in [`graphs/`](https://github.com/avadisabelle/avalangstack/tree/main/graphs), built and tested against the chain primitives they compose in `chains/`, and they keep publishing under the same npm names. This repository is archived: come here for history, build in the new home.
 
 # 🌿 AvaLangGraph — Agentic Flow Ecosystem
 
